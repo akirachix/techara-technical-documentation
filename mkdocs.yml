@@ -1,7 +1,6 @@
 site_name: GridFit Technical Documentation
 site_description: Technical documentation for GridFit, a rules-based fit check that matches SME electricity demand to spare mini-grid capacity in Zambia.
 site_author: TechAra
-# TODO: swap in the real GitHub username/org once the repo exists
 site_url: https://akirachix.github.io/techara-technical-documentation/
 repo_url: https://github.com/akirachix/techara-technical-documentation
 repo_name: akirachix/techara-technical-documentation
