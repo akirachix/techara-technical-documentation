@@ -1,0 +1,87 @@
+site_name: GridFit Technical Documentation
+site_description: Technical documentation for GridFit, a rules-based fit check that matches SME electricity demand to spare mini-grid capacity in Zambia.
+site_author: TechAra
+# TODO: swap in the real GitHub username/org once the repo exists
+site_url: https://akirachix.github.io/techara-technical-documentation/
+repo_url: https://github.com/akirachix/techara-technical-documentation
+repo_name: akirachix/techara-technical-documentation
+copyright: TechAra · GridFit
+
+theme:
+  name: material
+  logo: assets/images/gridfit-mark-white.svg
+  favicon: assets/images/favicon.png
+  font:
+    text: Afacad
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - def_list
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Overview: overview.md
+  - Architecture: architecture.md
+  - Backend / API: backend-api.md
+  - Rules Engine: rules-engine.md
+  - Frontend Web: frontend-web.md
+  - Field App: field-app.md
+  - Metering Device: metering-device.md
+  - Security: security.md
+  - Deployment: deployment.md
+  - QA Process: qa-process.md
+  - Developer Guide: developer-guide.md
+  - Brand Guideline: brand-guideline.md
+  - Glossary: glossary.md
