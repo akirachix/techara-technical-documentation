@@ -16,8 +16,8 @@ The logo is an orange open ring with a purple "F" sitting inside its opening. It
 
 On a purple background the "F" and wordmark go white and the ring stays orange. On an orange background the ring and "Grid" go white and the "F" stays purple.
 
-!!! warning "TODO"
-    Replace the logo files in `docs/assets/images/` with the real exported SVGs. The ones there now are stand-ins redrawn for the scaffold.
+!!! note "Logo assets"
+    GridFit mark SVG files are included in the documentation assets. The complete vertical and horizontal logo lockups should be checked against the approved brand exports before being used in new materials.
 
 ## Colour palette
 
@@ -50,3 +50,41 @@ Pill-shaped and rectangular buttons, each in four states:
 | Hover / highlight | Orange fill, white text |
 | Disabled | Light purple fill, white text |
 | Secondary | White fill, purple outline and text |
+
+## Brand reference images
+
+The following images provide visual references for the GridFit identity and interface styling.
+
+### Logo displays
+
+![GridFit logo displays](assets/images/brand/logo-displays.png)
+
+### Colour palette
+
+![GridFit colour palette](assets/images/brand/colour-palette.png)
+
+### Typography
+
+![GridFit typography](assets/images/brand/typography.png)
+
+### Backgrounds
+
+![GridFit backgrounds](assets/images/brand/backgrounds.png)
+
+### Buttons
+
+![GridFit button styles](assets/images/brand/buttons.png)
+
+### Iconography
+
+![GridFit iconography](assets/images/brand/iconography.png)
+
+## Brand asset files
+
+| Asset | Location |
+|---|---|
+| Standard GridFit mark | `assets/images/gridfit-mark.svg` |
+| White GridFit mark | `assets/images/gridfit-mark-white.svg` |
+| Favicon | `assets/images/favicon.png` |
+| Brand reference sheet | `assets/images/brand-sheet.png` |
+
