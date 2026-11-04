@@ -1,0 +1,110 @@
+@import url("https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@500;600;700&display=swap");
+
+:root {
+  --gf-purple: #46317C;
+  --gf-purple-light: #9B8FC0;
+  --gf-orange: #F79438;
+  --gf-charcoal: #45403B;
+  --gf-heading-font: "Alumni Sans", "Arial Narrow", sans-serif;
+}
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: var(--gf-purple);
+  --md-primary-fg-color--light: var(--gf-purple-light);
+  --md-primary-fg-color--dark: #36265F;
+  --md-accent-fg-color: var(--gf-orange);
+  --md-typeset-color: var(--gf-charcoal);
+  --md-typeset-a-color: var(--gf-purple);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: var(--gf-purple);
+  --md-primary-fg-color--light: var(--gf-purple-light);
+  --md-primary-fg-color--dark: #36265F;
+  --md-accent-fg-color: var(--gf-orange);
+  --md-typeset-a-color: var(--gf-orange);
+  --md-default-bg-color: #1D1A26;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-header__topic,
+.md-nav__title {
+  font-family: var(--gf-heading-font);
+  letter-spacing: 0.01em;
+}
+
+.md-typeset h1 {
+  font-weight: 700;
+  font-size: 2.6em;
+  color: var(--md-primary-fg-color);
+}
+
+[data-md-color-scheme="slate"] .md-typeset h1 {
+  color: var(--gf-orange);
+}
+
+.md-typeset h2 {
+  font-weight: 600;
+  font-size: 1.9em;
+}
+
+.md-typeset h3 {
+  font-weight: 600;
+  font-size: 1.45em;
+}
+
+.md-typeset .md-button {
+  border-radius: 999px;
+  font-weight: 600;
+  border-color: var(--gf-purple);
+  color: var(--gf-purple);
+}
+
+.md-typeset .md-button--primary {
+  background-color: var(--gf-purple);
+  color: #fff;
+}
+
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus {
+  background-color: var(--gf-orange);
+  border-color: var(--gf-orange);
+  color: #fff;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button {
+  border-color: var(--gf-orange);
+  color: var(--gf-orange);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
+  background-color: var(--gf-orange);
+  color: #fff;
+}
+
+.gf-hero {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.gf-hero img {
+  width: 140px;
+}
+
+.gf-hero p {
+  font-size: 1.15em;
+  max-width: 34em;
+  margin: 0.5rem auto 1.2rem;
+}
+
+.gf-swatch {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 0.4em;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
