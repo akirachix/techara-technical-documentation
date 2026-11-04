@@ -1,186 +1,125 @@
 # Developer Guide
 
-This guide explains how to set up, navigate, test and contribute to the GridFit codebase. It is intended for developers joining the project and existing team members maintaining its services.
+This guide describes the repository conventions and repeatable workflow for contributing to GridFit.
 
-## Development environment
+## Repository boundaries
 
-### Backend prerequisites
+GridFit is split across at least three codebases:
+- Backend: FastAPI application, SQLAlchemy models, migrations, services, repositories, engine and tests.
+- Frontend: Next.js operator and field interface.
+- Technical documentation: MkDocs Material site.
+- The informational website is a separate Vite/React project and should be documented/deployed independently.
 
-The backend requires:
+Make changes in the repository that owns the relevant behaviour. A UI-only change should not silently redefine an API contract; an API change should include schema, service, repository and test updates as appropriate.
 
-- Python 3.11 or newer.
-- [uv](https://docs.astral.sh/uv/) for environment and dependency management.
-- Git.
-- Access to the configured development database.
+## Backend structure and standards
 
-The backend dependencies and tool configuration are defined in `pyproject.toml`.
+Use the existing layers:
 
+1. Router: HTTP path, method, dependency and response schema.
+2. Schema: Pydantic input/output validation.
+3. Service: business rules, permission-aware orchestration and transaction handling.
+4. Repository: database reads/writes.
+5. Model: SQLAlchemy mapping and database constraints.
+6. Engine: pure calculation logic where practical.
 
-## Backend setup
+Keep route functions thin. Use UUIDs consistently for entity identifiers. Keep organisation scoping in repository/service calls. Prefer explicit enums for persisted status/outcome values. Add a migration whenever a model change affects the database schema.
 
-Clone the backend repository and enter its directory:
+## Frontend standards
 
-    git clone <backend-repository-url>
-    cd techara-backend
+- Use the App Router structure already present under `app/`.
+- Reuse shared components from `components/shared/`.
+- Keep route-specific styles in CSS Modules where the project already does so.
+- Use the existing API helpers in `lib/` rather than duplicating fetch behaviour.
+- Keep server-only environment variables out of client components.
+- Provide loading, empty, error and validation states.
+- Do not treat mock data as a backend integration.
 
-Create the environment and install dependencies:
+## Testing
 
-    uv venv
-    uv pip install -r pyproject.toml --group dev
+Backend:
 
-Start the development server:
+```bash
+uv run pytest
+uv run pytest --cov
+uv run ruff check .
+```
 
-    uv run --no-sync uvicorn main:app --reload
+Add tests for:
+- Happy paths.
+- Invalid payloads and boundary values.
+- Missing/expired authentication.
+- Role restrictions.
+- Cross-organisation access attempts.
+- Duplicate/unique constraint conflicts.
+- Database transaction rollback.
+- Assessment edge cases and missing data.
 
-The API is available at `http://localhost:8000`. Its useful endpoints are `/health`, `/docs` and `/openapi.json`.
+Frontend:
 
-## Environment configuration
+```bash
+npm run lint
+npm run format:check
+npm run build
+npm test
+```
 
-Store local configuration in `.env` where required. Never commit credentials, access tokens, database passwords or production secrets. Keep local, test and production configuration separate. Consult the backend README and configuration implementation for the required variables.
+The current test script permits zero tests. Add actual tests for critical components and workflows before relying on the test command as a quality gate.
 
-## Project structure and code standards
+Documentation:
 
-The backend follows a layered structure:
-
-| Directory | Responsibility |
-|---|---|
-| `core/` | Shared configuration, security, dependencies and exception handling |
-| `engine/` | Feasibility checks, evaluation and simulation |
-| `models/` | SQLAlchemy database models |
-| `repositories/` | Database queries and persistence operations |
-| `routers/` | FastAPI endpoint definitions |
-| `schemas/` | Request and response validation |
-| `services/` | Application and business logic |
-| `migrations/` | Alembic database migrations |
-| `tests/` | Automated backend tests |
-
-### Global code standards
-
-- Keep API route handlers focused on HTTP concerns.
-- Put business logic in service modules.
-- Use repositories for database access.
-- Use Pydantic schemas to validate request and response data.
-- Keep database models and API schemas separate.
-- Preserve organisation-level data boundaries when accessing resources.
-- Add or update tests when changing application behaviour.
-- Avoid committing generated files, local databases, credentials or environment files.
-
-### Testing conventions
-
-The backend uses pytest. Test configuration is defined in `pyproject.toml`, with test discovery rooted at `tests/`.
-
-| Test location | Coverage area |
-|---|---|
-| `tests/api/` | API endpoints, request validation and access guards |
-| `tests/engine/` | Feasibility rules and engine behaviour |
-| `tests/` | Authentication, models, services and other backend modules |
-
-Run the automated test suite with coverage:
-
-    uv run --no-sync pytest --cov --cov-report=term-missing
-
-Run tests without coverage:
-
-    uv run --no-sync pytest
-
-Run a specific test module:
-
-    uv run --no-sync pytest tests/test_health.py
-
-### Linting and formatting
-
-Ruff is used for linting and formatting. Run these checks before submitting changes:
-
-    uv run --no-sync ruff check .
-    uv run --no-sync ruff format --check .
-
-Apply automatic formatting with:
-
-    uv run --no-sync ruff format .
-
-The configured line length is 88 characters and the Ruff target is Python 3.11.
+```bash
+mkdocs build --strict
+```
 
 ## Git workflow
 
-The repository history shows feature development in separate branches and integration through pull requests. The current team history uses `develop` as its integration branch. The starter README also describes a `main`-based workflow, so confirm the target branch with the team before opening a pull request.
+Recommended contribution flow:
 
-Recommended branch naming patterns observed in the repository include:
+1. Update your local default branch.
+2. Create a focused branch, for example `feature/business-profile` or `docs/metering-contract`.
+3. Make one coherent change.
+4. Run relevant tests and linters.
+5. Review the diff for unrelated files, generated files, secrets and database dumps.
+6. Push the branch and open a pull request.
+7. Explain the behaviour change, tests run, screenshots/API examples and any migration impact.
+8. Request peer review and resolve comments before merge.
 
-| Change type | Example |
+Never merge a teammate's entire feature branch just to obtain one dependency. Coordinate the required merge order or rebase on the shared integration branch.
+
+## Commit messages
+
+Use short imperative messages that identify the change, for example:
+
+- `docs: document meter reading model`
+- `feat: scope device registration to organisation`
+- `test: cover cross-organisation assignment access`
+- `fix: reject duplicate open meter assignments`
+
+Follow any stricter commit-title rules enforced by the repository's GitHub Actions.
+
+## Ownership and coordination
+
+The frontend README records the initial work split:
+- Emma: shared UI and authentication screens.
+- Gift: overview, sites and import data.
+- Gabrielle: prospects, fit check and compare sites.
+- Nikki: field home and business logging process.
+- Sharon: field businesses, metering UI, My Meters, profile and operator settings.
+
+Treat this as a historical contribution map, not a permanent code-ownership or approval policy. Confirm current maintainers before assigning reviews.
+
+## Common problems
+
+| Problem | Resolution |
 |---|---|
-| Feature | `feature/business-create` |
-| Feature (short form) | `feat/business-endpoints` |
-| Bug fix | `fix/heroku-postgres-url` |
-| Documentation | `docs/gridfit-documentation` |
-
-A typical contribution sequence is:
-
-1. Update the intended base branch.
-2. Create a branch for the specific change.
-3. Implement the change and add or update tests.
-4. Run the test, lint and formatting checks.
-5. Commit and push the branch.
-6. Open a pull request with a clear description and testing evidence.
-7. Address review feedback and merge through the agreed team process.
-
-### Commit messages
-
-The Git history contains conventional prefixes such as `feat`, `fix`, `test`, `style` and `refactor`.
-
-Use a concise format:
-
-    type: short description
-
-Examples:
-
-    feat: add business profile endpoint
-    fix: handle legacy database URLs
-    test: cover meter assignment validation
-    docs: update GridFit developer guide
-
-Describe the actual change rather than using vague messages such as `updates` or `final changes`.
-
-## Ownership and collaboration
-
-The codebase is divided into backend areas such as authentication, businesses, sites, meter assignments, sensor devices, site profiles and scenarios. The Git branch history also reflects feature-based contributions.
-
-Individual maintainer assignments are not established by the repository structure alone. Confirm current ownership, reviewers and handover responsibilities with the project team before changing shared modules.
-
-When changing a shared service, schema, model or API contract, check for dependent routers, frontend consumers and tests before merging.
-
-## Common problems and troubleshooting
-
-| Problem | Likely cause | Recommended action |
-|---|---|---|
-| Python version error | Python version is below the project requirement | Use Python 3.11 or newer. |
-| Missing dependency | Project dependencies have not been installed | Run `uv pip install -r pyproject.toml --group dev` from the backend repository. |
-| Wrong virtual environment | Another repository virtual environment is active | Change to the backend repository and activate or run its own environment. |
-| Database connection failure | Incorrect database URL or unavailable database | Check local environment configuration and database availability. |
-| Migration failure | Migration history or database schema is inconsistent | Inspect Alembic migration history before applying or repairing migrations. |
-| API returns 401 or 403 | Missing, invalid or insufficient credentials or permissions | Check the access token, user role and organisation context. |
-| Ruff reports a syntax error | Invalid Python syntax in a source or migration file | Inspect the reported file and line, correct the syntax, then rerun Ruff. |
-| Tests fail | A regression, invalid fixture or environment issue | Read the failing assertion and traceback, then reproduce the test individually. |
-| API documentation is unavailable | Server failed to start or the wrong URL is being used | Check server output and confirm the API is running on the expected port. |
-
-### Before submitting changes
-
-Use this checklist before opening or updating a pull request:
-
-- [ ] Confirm the intended base branch with the team.
-- [ ] Keep the change focused on the assigned feature or fix.
-- [ ] Update tests for changed behaviour.
-- [ ] Run the backend test suite.
-- [ ] Run Ruff lint and formatting checks.
-- [ ] Check database migrations where applicable.
-- [ ] Review the diff for credentials, local databases and generated files.
-- [ ] Include testing evidence in the pull request description.
-
-## Related documentation
-
-- [Backend API](backend-api.md)
-- [Architecture](architecture.md)
-- [Rules engine](rules-engine.md)
-- [Frontend web application](frontend-web.md)
-- [Field application](field-app.md)
-- [Security](security.md)
-- [Deployment](deployment.md)
+| `JWT_SECRET` missing | Set a local secret in the environment; never commit it. |
+| Database schema mismatch | Check Alembic revision and apply reviewed migrations. |
+| 401 response | Check bearer token presence, expiry, signature secret and active user status. |
+| 403 response | Check role and `must_change_password` state. |
+| 404 for a valid-looking UUID | The record may not belong to the authenticated user's organisation. |
+| Assignment returns 409 | Device/business may already have an open assignment, or the device may not be active. |
+| Business profile rejected | Confirm readings exist and meet `min_observed_days`. |
+| Frontend appears to save but loses data on refresh | The current README describes mock/in-memory state; verify live persistence integration. |
+| `npm test` passes without running tests | The script includes `--passWithNoTests`; add test files and verify the runner discovers them. |
+| Docs build fails | Run `mkdocs build --strict`, check navigation paths and Markdown code fences. |

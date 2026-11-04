@@ -1,171 +1,198 @@
 # Metering Device
 
-GridFit's proposed metering device is intended to measure a business's electrical load and provide measurement data for business energy profiling and feasibility assessments.
-
-**Implementation status:** The backend contains sensor-device registration, meter assignments and a reading data model. A complete physical-device-to-backend reading transmission workflow has not been confirmed.
+This page documents the metering concepts and the backend data contract found in the supplied GridFit source. It distinguishes the proposed hardware design from implemented software. The supplied backend archive contains sensor-device, meter-assignment and reading database models, but it does **not** contain device firmware or an HTTP/MQTT reading-ingestion endpoint.
 
 ## Purpose
 
-Self-reported equipment demand helps estimate a business's expected electricity consumption, but it may not represent its actual operating load.
+The purpose of metering is to build an evidence-based picture of a business's electricity demand. Owner estimates and equipment nameplates are useful context, but they do not necessarily describe the actual timing, average load, peak demand or daily energy use. Time-stamped observations can be grouped into hourly profiles and compared with a mini-grid site's operating limits.
 
-Metering is intended to provide measured electrical data that can support:
+The backend's business-profile service uses persisted readings to derive:
+- 24 hourly average power values (`average_kw`);
+- 24 hourly peak power values (`peak_kw`);
+- observed-day count and reading count;
+- first and last measurement timestamps;
+- energy derived from the cumulative energy counter.
 
-- Understanding actual business consumption.
-- Comparing measured load with declared equipment demand.
-- Building business energy profiles.
-- Improving the evidence available for site and business feasibility assessments.
+A site profile sets `min_observed_days`. Scenario creation rejects a business profile that does not meet this minimum.
 
-Measured readings should complement, not automatically replace, equipment information and engineering review.
+!!! warning "Measurement is not approval"
+    Meter data supports a technical assessment; it does not by itself certify wiring, establish legal compliance, approve a new connection or guarantee that the mini-grid can serve the load safely.
 
-## Components
+## Hardware concept and current status
 
-The current documentation identifies the following proposed hardware components:
+The original design notes identify the following proposed components:
 
-| Component | Intended role |
-|---|---|
-| ESP32 | Microcontroller for device operation and data processing |
-| SIM800C | Proposed GSM/GPRS communication module |
-| PZEM-004T-100A | Proposed electrical measurement module |
-| CT clamp | Current measurement component |
-| BS1363 plug/socket | Proposed electrical connection interface |
-| Enclosure | Physical housing and protection for the electronics |
+| Component | Intended role | Status in supplied software archive |
+|---|---|---|
+| ESP32 | Microcontroller for measurement collection and communications | Proposed; no firmware source supplied |
+| SIM800C | Cellular/GPRS communications module | Proposed; no firmware/configuration supplied |
+| PZEM-004T-100A | AC electrical measurement module | Proposed; no calibration or test evidence supplied |
+| CT clamp | Current sensing around a conductor | Proposed; wiring and safety validation not supplied |
+| BS1363 plug/socket | Physical connection concept shown in early design notes | Proposed; suitability depends on the actual installation and electrical design |
+| Enclosure | Mechanical/electrical protection | No verified enclosure drawings or certification supplied |
 
-> **Design status:**
-> These components describe the proposed hardware design. Their final specifications, compatibility, procurement status and assembled-device validation have not been established by the inspected backend source.
+The parts list is not a validated bill of materials. Before building or installing hardware, a qualified electrical professional must verify voltage/current ratings, isolation, fusing, conductor sizing, enclosure rating, strain relief, earthing, thermal behaviour and local electrical requirements. Do not use the table as a wiring instruction.
 
+## Wiring and enclosure
 
-## Wiring
+No verified Cirkit wiring diagram, schematic, PCB design, enclosure CAD file, product certification or installation photographs were present in the supplied source archives. These assets should be added to `docs/assets/` only after the hardware team approves them.
 
-The wiring design should document the connections between the ESP32, measurement module, communication module and power supply.
-
-A verified Cirkit wiring diagram has not been included in the inspected software source. Add the approved wiring diagram here once the hardware team provides it.
-
-Electrical wiring and mains-voltage connections must be reviewed and tested by a qualified person before physical deployment.
-
-## Enclosure
-
-The enclosure is intended to house and protect the metering electronics while allowing the required electrical and communication connections.
-
-The original documentation outline identifies 3D-printed enclosure renders and photographs as expected design assets. These should be added when approved renders or photographs are available.
+A future hardware release should include:
+- A revision-controlled schematic and wiring diagram.
+- Exact part numbers and rated operating ranges.
+- Isolation and over-current protection details.
+- Enclosure material, dimensions and ingress-protection rating.
+- Calibration procedure and measurement uncertainty.
+- Bench-test results across representative loads.
+- Installation and maintenance instructions reviewed by a qualified person.
 
 ## Firmware flow
 
-The proposed firmware workflow is:
+A conceptual firmware lifecycle would be:
 
-1. **Boot:** Initialise the microcontroller and connected measurement hardware.
-2. **Initialise:** Configure the measurement module and communication interface.
-3. **Read:** Collect electrical measurements from the measurement module.
-4. **Validate:** Check that readings are available and within expected ranges.
-5. **Prepare:** Add the measurement timestamp and device identification.
-6. **Transmit:** Send the prepared reading through the configured communication channel.
-7. **Recover:** Handle communication failures and retry according to the firmware design.
+1. Power-on and initialise the measurement interface.
+2. Check sensor/module status and obtain a valid measurement.
+3. Attach a device identifier and a trustworthy measurement timestamp.
+4. Persist readings locally if the communications link is unavailable.
+5. Transmit using an authenticated, encrypted transport.
+6. Retry safely without duplicating previously accepted readings.
+7. Report device health and recover from sensor/network faults.
 
-This describes the intended firmware sequence. The firmware source, retry strategy and deployed device behaviour have not been verified.
+**This is a proposed workflow, not implemented firmware.** No ESP32 source, SIM800C modem driver, retry queue, local buffer format, sampling interval or firmware release process was included in the supplied archives.
 
-## Reading payload
+## Reading data model
 
-The backend reading model defines the following measurement fields:
+The SQLAlchemy `Reading` model maps to the `reading` table. It contains the following columns:
 
-| Field | Meaning |
-|---|---|
-| `measured_at` | Time the measurement was taken |
-| `received_at` | Time the backend record was received |
-| `voltage_v` | Voltage in volts |
-| `current_a` | Current in amperes |
-| `power_w` | Electrical power in watts |
-| `energy_total_kwh` | Cumulative energy in kilowatt-hours |
+| Field | Type | Meaning |
+|---|---|---|
+| `reading_id` | Integer, primary key | Database-generated reading identifier |
+| `assignment_id` | UUID, foreign key | Meter installation/assignment that produced the reading |
+| `business_id` | UUID, foreign key | Business associated with the assignment |
+| `measured_at` | Timezone-aware datetime | Time the measurement was taken |
+| `received_at` | Timezone-aware datetime | Time the database received/persisted the record; server default is current time |
+| `voltage_v` | Numeric(6,2) | Voltage in volts |
+| `current_a` | Numeric(7,3) | Current in amperes |
+| `power_w` | Numeric(9,2) | Active power in watts |
+| `energy_total_kwh` | Numeric(12,4) | Cumulative energy counter in kilowatt-hours |
 
-The reading record also contains an assignment ID and business ID to associate the measurement with the relevant installation.
+The database enforces:
+- Voltage between 0 and 300 V.
+- Current greater than or equal to zero.
+- Power greater than or equal to zero.
+- Cumulative energy greater than or equal to zero.
+- One reading per assignment and measurement timestamp.
+- A composite foreign key pairing `assignment_id` with `business_id`, preventing a reading from claiming a different business from the assignment.
 
-### Data validation
+These are database constraints, not a complete device payload validator. The supplied code does not specify the external JSON field names, API route, authentication header, sampling cadence or message acknowledgement protocol.
 
-The database enforces these measurement constraints:
+## Example logical reading record
 
-- Voltage must be between 0 and 300 V.
-- Current must be non-negative.
-- Power must be non-negative.
-- Cumulative energy must be non-negative.
-- The same assignment cannot have duplicate readings with the same measurement timestamp.
-- A reading's business must match the business associated with its meter assignment.
+The following illustrates the values represented by the database model. It is **not** a currently supported request body and there is no supplied endpoint to POST it to.
 
-The inspected source does not specify a transmission interval or a complete incoming reading payload schema.
+```json
+{
+  "assignment_id": "00000000-0000-0000-0000-000000000001",
+  "business_id": "00000000-0000-0000-0000-000000000002",
+  "measured_at": "2026-11-04T10:15:00Z",
+  "voltage_v": 230.50,
+  "current_a": 4.125,
+  "power_w": 920.00,
+  "energy_total_kwh": 123.4567
+}
+```
 
-## Transmission
+`received_at` is populated by the database and is not listed as a required client-supplied value in the model. The UUIDs above are illustrative placeholders only.
 
-The proposed hardware design identifies the SIM800C as the GSM/GPRS communication component.
+## Transmission and backend ingestion status
 
-However, the inspected backend does not currently expose a confirmed reading-ingestion route or a service that receives and saves readings from the physical device.
+The backend has:
+- `SensorDevice` records with organisation, serial number, status and registering-user references.
+- `MeterAssignment` records connecting a device to a business, with installation/removal timestamps and a stored device-token hash.
+- A helper to generate a random URL-safe device token and hash it with SHA-256.
+- A `Reading` model and business-profile queries that consume readings.
 
-Therefore, GSM/GPRS transmission to the GridFit backend should be treated as a planned integration rather than a verified working capability.
+The supplied backend does **not** have:
+- A `/readings` or telemetry-ingestion router.
+- A Pydantic reading-ingestion request schema.
+- A service/repository method for accepting and persisting new readings from a device.
+- A device-token verification dependency or request-signature verification flow.
+- An MQTT broker integration.
+- A firmware project or verified HTTPS/GPRS transport implementation.
 
-## Device authentication
+Therefore, the data model can describe readings already in the database, but the end-to-end transmission path is incomplete in the supplied code. Do not state that GSM/GPRS or MQTT transmission is live.
 
-When a meter assignment is created, the backend:
+## Device assignment and token lifecycle
 
-1. Generates a device token.
-2. Hashes the token before storing it in the assignment record.
-3. Returns the raw token in the assignment creation response.
-4. Stores the token hash rather than the raw token.
+`POST /assignments` accepts `device_id` and `business_id`. The service:
+1. Finds the device within the authenticated user's organisation.
+2. Finds the business within the same organisation.
+3. Requires the device status to be `active`.
+4. Rejects a device that already has an open assignment.
+5. Rejects a business that already has an open assignment.
+6. Generates a random token and stores its SHA-256 hash on the assignment.
+7. Returns the raw token in the creation response.
 
-The raw token should be captured securely when the assignment is created because the response is the point at which it is provided.
+The raw token is not included in `MeterAssignmentRead`. Treat it as a one-time credential: display it only at installation time, transfer it through a secure channel, never log it, and never commit it to source control. A future ingestion service must compare a presented token securely against the stored hash and enforce TLS. That verification is not present in the supplied implementation.
 
-### Implementation limitations
+Meter removal is a separate field-agent-only operation. The request schema requires `buffer_uploaded_confirmed: true`; the backend trusts this confirmation and does not inspect a physical device buffer.
 
-The inspected backend does not yet demonstrate:
+## Sampling interval and timestamp policy
 
-- An endpoint that accepts incoming readings from a metering device.
-- Verification of a submitted device token when receiving readings.
-- A complete device-token rotation or revocation workflow.
-- Confirmed HTTPS enforcement for device communication.
+No sampling frequency is defined in the supplied firmware or backend contract. The system should not document a fixed interval until the hardware and backend teams agree on it and test the resulting data volume.
 
-Before physical deployment, the ingestion workflow must validate the device token, protect it during transmission using HTTPS, and reject readings from unauthorised or inactive assignments.
+For a production ingestion design, specify:
+- Whether `measured_at` is generated by the device or synchronised from a trusted time source.
+- Timezone handling (store UTC instants; render in the site's configured timezone).
+- Maximum allowed clock drift and handling for missing/invalid timestamps.
+- Duplicate delivery and idempotency behaviour.
+- Maximum accepted measurement age and future-time tolerance.
+- Counter reset/rollover behaviour for `energy_total_kwh`.
+- Validation and rejection rules for physically implausible readings.
 
 ## Limitations
 
-The current implementation has important boundaries:
+- The model records AC voltage, current, power and cumulative energy; it does not by itself establish power factor, frequency, phase information or waveform quality.
+- Database bounds are not a calibration specification or accuracy guarantee.
+- The model does not contain a device-side sequence number or explicit quality/status flag.
+- A cumulative energy counter needs a defined reset/rollover policy before reliable energy deltas can be interpreted.
+- The data model does not define a sampling interval.
+- The supplied project does not prove that the proposed components have been assembled, calibrated, certified or deployed.
+- Meter readings cannot replace a qualified electrical inspection.
 
-- The listed hardware components are proposed; assembled-device validation has not been confirmed.
-- No verified wiring diagram, enclosure validation or measurement accuracy specification has been provided.
-- The backend has a reading data model, but no confirmed reading-ingestion API or service.
-- A complete physical-device-to-backend telemetry workflow has not been demonstrated.
-- GSM/GPRS transmission is a proposed communication approach, not a verified integration.
-- The reading model's database constraints do not establish the accuracy of the physical measurements.
+## Installation workflow
 
-These limitations should be resolved and tested before the device is treated as a production-ready metering solution.
+The backend-supported software workflow is:
+1. Register a sensor device.
+2. Create a business record.
+3. Create an assignment using the device and business IDs.
+4. Securely transfer the one-time token to the device provisioning process (provisioning tooling is not included in the supplied source).
+5. Confirm the physical installation and electrical safety independently.
+6. Verify telemetry only after an ingestion endpoint and device firmware are implemented and tested.
 
-## Installation
+Do not mark an installation as transmitting merely because an assignment record exists.
 
-The backend supports a meter-assignment workflow that links a registered device to a business.
+## Troubleshooting guide
 
-### Backend assignment workflow
-
-1. Register the sensor device under an organisation.
-2. Select the business that will receive the meter.
-3. Submit a meter assignment using the device ID and business ID.
-4. The backend checks that both records belong to the current user's organisation.
-5. The backend checks that the device is active.
-6. The backend prevents a device or business from having another open assignment.
-7. The backend creates the assignment and returns a device token.
-
-The field application includes an install-meter screen in its documented workflow. Its complete integration with the backend assignment endpoint has not been confirmed.
-
-### Removing an assignment
-
-The backend provides a removal operation for an existing assignment. The removal request requires confirmation that buffered readings have been uploaded.
-
-Physical installation and electrical connections must be carried out or reviewed by a qualified person. Follow the approved hardware and electrical safety procedures.
-
-## Troubleshooting
-
-| Problem | Backend behaviour or recommended check |
+| Symptom | Checks |
 |---|---|
-| Device serial already exists | Registration returns a conflict response (409). Check the serial number. |
-| Device or business cannot be found | Assignment creation returns not found (404). Verify the IDs and organisation. |
-| Device is inactive | Assignment creation is rejected (409). Check the device status. |
-| Device already has an open assignment | Assignment creation is rejected (409). Review existing assignments. |
-| Business already has an open assignment | Assignment creation is rejected (409). Review the business's current meter assignment. |
-| Reading has an invalid measurement | Database constraints reject values outside the permitted ranges. |
-| Duplicate reading timestamp | The database rejects duplicate timestamps for the same assignment. |
+| Device cannot be assigned | Confirm device and business exist in the same organisation, device status is `active`, and neither has an open assignment. |
+| Duplicate assignment conflict | Check whether the device or business already has an assignment with `removed_at IS NULL`. |
+| Token is no longer visible | The raw token is returned only by the assignment creation response; it is not returned by normal read endpoints. Re-provision using an approved process rather than retrieving a stored raw token. |
+| Reading violates constraints | Check voltage range, non-negative current/power/energy, timestamp uniqueness and assignment/business pairing. |
+| Business profile has insufficient observations | Check persisted readings and the site's `min_observed_days` setting. |
+| No readings arrive | The supplied backend has no ingestion route or firmware; confirm those components have since been implemented before debugging network connectivity. |
+| Removal cannot be completed | The API requires `buffer_uploaded_confirmed: true`; confirm the intended data-handling procedure before making that assertion. |
 
-Because a complete reading-ingestion workflow has not been confirmed, communication failures, transmission retries and device-side diagnostics cannot yet be documented as implemented features.
+## Release checklist for a production meter
 
+- [ ] Hardware schematic and BOM reviewed by a qualified electrical professional.
+- [ ] Calibration method and accuracy evidence recorded.
+- [ ] Firmware source and versioned release process available.
+- [ ] Device identity and token provisioning documented.
+- [ ] Authenticated TLS transport implemented and tested.
+- [ ] Reading-ingestion API, schema and token verification implemented.
+- [ ] Idempotency, retry and offline-buffer behaviour tested.
+- [ ] Clock synchronisation and energy-counter reset policy defined.
+- [ ] Device health, fault and retirement behaviour defined.
+- [ ] Field installation and safe isolation procedure approved.

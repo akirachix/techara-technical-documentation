@@ -1,284 +1,145 @@
-# Backend API
+# Backend / API
 
-The GridFit backend provides the API and application services used to manage organisations, sites, businesses, metering information and assessment scenarios.
+The backend is a FastAPI application. Its entry point is `main.py`, which registers authentication, meter-assignment, sensor-device, scenario, business, site and site-profile routers.
 
 ## API overview
 
-GridFit uses **FastAPI** to expose REST-style HTTP endpoints. The application is created in `main.py` with the title `GridFit API`.
+- **Framework:** FastAPI.
+- **Validation/serialisation:** Pydantic v2 schemas.
+- **ORM:** SQLAlchemy 2.x.
+- **Migrations:** Alembic.
+- **Authentication:** bearer JWTs signed with HS256.
+- **Database support:** SQLAlchemy configuration and model types support PostgreSQL and SQLite in the supplied code.
+- **Health check:** `GET /health`, returning `{"status":"ok"}`.
+- **Interactive API docs:** FastAPI normally exposes `/docs` and `/openapi.json` unless disabled by deployment configuration.
 
-The backend uses SQLAlchemy for database access and Pydantic schemas for request validation and response serialization.
-
-The application registers these router groups:
-
-- Authentication
-- Businesses
-- Sites
-- Site profiles
-- Sensor devices
-- Meter assignments
-- Scenarios
-
-A health endpoint is also registered at `GET /health`.
-
-## Hosted API
-
-A production API URL has not been confirmed in the supplied backend configuration.
-
-The supplied Postman collection uses the following local development address:
-
-`http://127.0.0.1:8000`
-
-When the application is running, FastAPI provides interactive API documentation at `/docs` and an OpenAPI specification at `/openapi.json`.
+No production API base URL is specified in the supplied source archive. Confirm the deployed Heroku URL and Swagger URL from the team's current Heroku application settings before publishing them here.
 
 ## Prerequisites
 
-The backend development environment requires:
+- Python 3.11 or later (`pyproject.toml` specifies `>=3.11`; `.python-version` pins the project runtime).
+- `uv` or another compatible Python environment/package installer.
+- PostgreSQL for a production-like deployment, or SQLite for local/test use.
+- Environment configuration including `JWT_SECRET` and a database URL as required by `database.py` and deployment settings.
 
-- Python
-- pip
-- Git
-- Access to the configured database
-- The backend repository and its dependency files
-- The environment variables required by the application
+## Local setup
 
-Use the Python version and database configuration specified by the backend repository. Local development settings should not automatically be treated as production settings.
+From the backend repository root:
+
+```bash
+# Install uv if it is not already available, then:
+uv sync --all-groups
+
+# Set required local configuration in your shell or an ignored .env file.
+export JWT_SECRET='replace-with-a-long-random-secret'
+
+# Apply migrations.
+uv run alembic upgrade head
+
+# Start the API.
+uv run uvicorn main:app --reload
+```
+
+Open `http://127.0.0.1:8000/docs` for the local OpenAPI interface. The exact database environment variable name is defined by the backend's database URL configuration; check `core/database_url.py` and `database.py` rather than assuming a name.
 
 ## Architecture layers
 
-The backend separates HTTP handling, validation, business logic and database access.
+| Layer | Location | Purpose |
+|---|---|---|
+| Application | `main.py` | Creates FastAPI app, registers handlers and routers, exposes health check |
+| Routers | `routers/` | HTTP methods, paths, dependencies and response models |
+| Schemas | `schemas/` | Pydantic request/response validation |
+| Services | `services/` | Business workflows and transaction coordination |
+| Repositories | `repositories/` | Database queries and persistence |
+| Models | `models/` | SQLAlchemy tables, relationships and constraints |
+| Core | `core/` | JWT security, roles, database URL, defaults and exception handling |
+| Engine | `engine/` | Hourly profiles, checks, simulation and spare-capacity calculations |
+| Migrations | `migrations/` | Alembic schema history |
+| Tests | `tests/` | Pytest test suite and fixtures |
 
-| Layer | Responsibility |
+## Authentication and API conventions
+
+Protected routes use:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+A successful login returns `access_token` and `token_type: "bearer"`. The JWT includes the user ID in `sub`, the role in `role`, the organisation ID in `org`, and an expiry in `exp`. The default access-token lifetime is 60 minutes unless `ACCESS_TOKEN_MINUTES` is configured.
+
+Pydantic schemas reject malformed values before service execution. The application registers custom exception handlers in `core/handlers.py`; consult those handlers for the exact error response envelope. Typical HTTP semantics include 200 for reads/updates, 201 for creation, 204 for deletion, 401 for missing/invalid authentication, 403 for role/password restrictions, 404 for missing or out-of-scope resources, 409 for conflicts and 422 for schema validation.
+
+## Endpoint groups
+
+The following paths are relative to the API root.
+
+| Method | Path | Access | Purpose |
+|---|---|---|---|
+| POST | `/auth/signup` | Public | Create an organisation and initial user according to signup rules |
+| POST | `/auth/login` | Public | Authenticate using identifier and password |
+| PATCH | `/auth/change-password` | Authenticated | Change the current user's password |
+| POST | `/businesses` | Operator or field agent | Create a business |
+| GET | `/businesses` | Operator or field agent | List organisation businesses |
+| GET | `/businesses/{business_id}` | Operator or field agent | Retrieve a business |
+| PATCH | `/businesses/{business_id}` | Operator or field agent | Update business details |
+| GET | `/businesses/{business_id}/profile` | Operator or field agent | Retrieve derived business load profile |
+| POST | `/sites` | Operator | Create a site |
+| GET | `/sites` | Operator or field agent | List sites |
+| GET | `/sites/{site_id}` | Operator or field agent | Retrieve a site |
+| PATCH | `/sites/{site_id}` | Operator | Update a site |
+| GET | `/sites/{site_id}/spare-capacity` | Operator | Retrieve calculated spare-capacity information |
+| POST | `/sites/{site_id}/profiles` | Operator | Create a versioned site profile |
+| GET | `/sites/{site_id}/profiles` | Operator | List site profiles |
+| GET | `/sites/{site_id}/profiles/latest` | Operator | Retrieve latest site profile |
+| POST | `/sites/{site_id}/profiles/import` | Operator | Parse a monitoring CSV export |
+| POST | `/devices` | No user dependency visible in current router | Register a sensor device; review security section |
+| GET | `/devices` | No user dependency visible in current router | List devices by supplied organisation ID |
+| PATCH | `/devices/{device_id}/status` | No user dependency visible in current router | Change device status |
+| POST | `/assignments` | Operator or field agent | Install a meter on a business |
+| GET | `/assignments` | Operator or field agent | List assignments; optional business/device/open filters |
+| GET | `/assignments/{assignment_id}` | Operator or field agent | Retrieve assignment |
+| POST | `/assignments/{assignment_id}/remove` | Field agent | Remove a meter; request must confirm buffer upload |
+| POST | `/scenarios` | Operator | Run a scenario |
+| POST | `/scenarios/compare-sites` | Operator | Compare selected businesses across sites |
+| GET | `/scenarios` | Operator | List/filter scenarios |
+| GET | `/scenarios/{scenario_id}` | Operator | Retrieve scenario details |
+| PATCH | `/scenarios/{scenario_id}` | Operator | Rename a scenario |
+| DELETE | `/scenarios/{scenario_id}` | Operator | Delete a scenario |
+| GET | `/health` | Public | Health check |
+
+The sensor-device router currently has no authentication dependency in its route definitions and accepts `organisation_id`/`registered_by` from request data or query parameters. This is a security gap, not a recommended public API design. See [Security](security.md).
+
+## Important data models
+
+| Entity | Role |
 |---|---|
-| `main.py` | Creates the FastAPI application and registers routers and exception handlers. |
-| Routers | Define HTTP endpoints, dependencies and response models. |
-| Schemas | Validate incoming data and define response structures. |
-| Services | Implement application and business logic. |
-| Repositories | Encapsulate database queries and persistence operations. |
-| Models | Represent database entities using SQLAlchemy. |
-| Core | Contains shared application functionality, including roles, dependencies and exception handling. |
-| Database | Provides database sessions to application components. |
-
-The router layer delegates application operations to services instead of implementing all business logic directly inside endpoint functions.
-
-## API conventions
-
-The supplied Postman collection documents the following conventions:
-
-| Convention | Description |
-|---|---|
-| Local base URL | `http://127.0.0.1:8000` |
-| Request format | JSON |
-| Response format | JSON |
-| Authentication | Bearer token for authenticated requests |
-| Correlation header | `X-Correlation-ID` |
-| Resource identifiers | UUIDs are used by several resource routes. |
-
-### HTTP status codes
-
-The business and site creation endpoints return `201 Created` when a resource is created successfully.
-
-Other response status codes depend on the endpoint operation and its validation, authentication and error-handling rules.
-
-### Authentication
-
-Authenticated requests use a Bearer token in the HTTP `Authorization` header:
-
-`Authorization: Bearer <access-token>`
-
-The exact authentication requirements should be checked against each endpoint's dependencies and the generated OpenAPI specification.
-
-### Error handling
-
-The application registers custom exception handlers through `register_exception_handlers(app)` in `main.py`.
-
-Refer to the backend exception-handler implementation for the exact error response structure and status-code mapping.
-
-## Endpoint reference
-
-The following endpoints are confirmed in the inspected backend router definitions.
-
-### Health
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/health` | Returns the API health status. |
-
-### Businesses
-
-Base path: `/businesses`
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/businesses` | Create a business. |
-| GET | `/businesses` | List businesses. |
-| GET | `/businesses/{business_id}` | Retrieve a business. |
-| PATCH | `/businesses/{business_id}` | Update a business. |
-| GET | `/businesses/{business_id}/profile` | Retrieve a business profile. |
-
-### Sites
-
-Base path: `/sites`
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/sites` | Create a site. |
-| GET | `/sites` | List sites. |
-| GET | `/sites/{site_id}` | Retrieve a site. |
-| PATCH | `/sites/{site_id}` | Update a site. |
-| GET | `/sites/{site_id}/spare-capacity` | Retrieve site spare-capacity information. |
-
-### Sensor devices
-
-Base path: `/devices`
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/devices` | Register a sensor device. |
-| GET | `/devices` | List sensor devices. |
-| PATCH | `/devices/{device_id}/status` | Update a device status. |
-
-The device listing endpoint accepts an `organisation_id` query parameter and an optional `status` parameter.
-
-The status-update endpoint also requires `organisation_id`.
-
-### Meter assignments
-
-Base path: `/assignments`
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/assignments` | Create a meter assignment. |
-| GET | `/assignments` | List meter assignments. |
-| GET | `/assignments/{assignment_id}` | Retrieve an assignment. |
-| POST | `/assignments/{assignment_id}/remove` | Remove an assignment. |
-
-The assignment listing endpoint supports these optional query parameters:
-
-- `business_id`
-- `device_id`
-- `open_only` (defaults to `false`)
-
-## Role-based access control
-
-GridFit uses role-based access control to restrict selected operations.
-
-The inspected router definitions show the following permissions:
-
-| Resource | Operation | Required role |
-|---|---|---|
-| Businesses | Create, list, retrieve and update | All roles |
-| Business profiles | Retrieve profile | All roles |
-| Sites | Create | Operator |
-| Sites | List and retrieve | All roles |
-| Sites | Update | Operator |
-| Sites | View spare capacity | Operator |
-| Meter assignments | Create, list and retrieve | All roles |
-| Meter assignments | Remove | Field agent |
-
-### Sensor-device permissions
-
-The inspected sensor-device router does not show explicit role dependencies on its listed endpoints. Its access-control requirements should be verified against the authentication dependencies and security configuration before production deployment.
-
-### Organisation-level access
-
-Business and site operations use organisation context to scope access to resources. The backend services and repositories should enforce these boundaries when retrieving or modifying organisation-owned records.
-
-## Data models
-
-GridFit uses SQLAlchemy models to represent its core application data.
-
-The ten identified entities are:
-
-| Entity | Purpose |
-|---|---|
-| Organisation | Represents an organisation using GridFit. |
-| User | Stores user account information and organisation membership. |
-| Site | Represents a mini-grid site being managed or assessed. |
-| Site profile | Stores site capacity and operational profile information. |
-| Business | Represents a productive-use business registered on a site. |
-| Sensor device | Represents a metering or monitoring device. |
-| Meter assignment | Links a sensor device to a business for metering. |
-| Reading | Stores recorded metering measurements. |
-| Scenario | Represents a feasibility assessment scenario. |
-| Scenario business | Associates businesses with assessment scenarios. |
-
-### Data relationships
-
-The entities work together to support organisation management, site registration, business onboarding, metering and scenario assessment.
-
-Organisation and user records provide the organisational context for application access. Sites and site profiles describe the electricity supply context. Businesses, sensor devices, meter assignments and readings support the collection of business-level electricity information. Scenarios and scenario-business records support feasibility assessment workflows.
-
-## Testing
-
-GridFit backend testing uses pytest for automated tests. Shared fixtures are defined in `conftest.py`.
-
-### Running automated tests
-
-Run backend tests from the backend repository, not the documentation repository.
-
-Activate the backend virtual environment, install the dependencies specified by the backend project, and execute:
-
-`pytest`
-
-For more detailed output, execute:
-
-`pytest -v`
-
-### API testing
-
-A Postman collection is available for manually testing the API.
-
-The collection includes health-check and business-operation requests. Authenticated requests use Bearer-token authentication.
-
-Recommended API test coverage includes:
-
-- Resource creation and retrieval
-- Request validation
-- Resource updates
-- Authentication and authorisation
-- Organisation-level access boundaries
-- Meter assignment operations
-- Scenario assessment workflows
-
-Test results should be reviewed before release. The existence of test files does not establish that all tests pass.
-
-## Code standards and project structure
-
-The backend follows a layered application structure that separates routing, validation, business logic and database operations.
-
-The main implementation conventions are:
-
-- **Routers:** Define HTTP methods, endpoint paths, dependencies and response models.
-- **Schemas:** Define request validation and response structures.
-- **Services:** Handle application workflows and business rules.
-- **Repositories:** Encapsulate database queries and persistence.
-- **Models:** Represent database entities.
-- **Core:** Provides shared dependencies, role definitions and exception handling.
-
-### Development practices
-
-- Keep endpoint handlers focused on HTTP request and response handling.
-- Place business logic in the appropriate service layer.
-- Use schemas to validate incoming data.
-- Keep database queries within repository or data-access components.
-- Apply organisation-level access restrictions consistently.
-- Add or update tests when introducing or changing functionality.
-- Use focused feature branches and pull requests for code changes.
+| Organisation | Tenant boundary for users, sites and devices |
+| User | Operator or field agent account |
+| Site | Mini-grid location owned by an organisation |
+| SiteProfile | Versioned technical and operational assumptions for a site |
+| Business | SME load and operating information |
+| SensorDevice | Registered metering device and status |
+| MeterAssignment | Association between one device and one business over an installation period |
+| Reading | Time-stamped electrical measurements associated with an assignment/business |
+| Scenario | Assessment inputs, outcome, check results and simulation output |
+| ScenarioBusiness | Business membership and recorded pursue/not-pursue decision |
+
+## Reading ingestion status
+
+The `reading` table/model exists and defines fields and database constraints, but the supplied backend source has no `/readings` router, public ingestion schema, or service for accepting device measurements. Do not use the existence of the model as evidence that live telemetry is being received. The current business-profile service reads persisted readings; a separate ingestion implementation is required to populate them.
+
+## Testing and standards
+
+Run:
+
+```bash
+uv run pytest
+uv run pytest --cov
+uv run ruff check .
+```
+
+The project uses pytest, pytest-cov and Ruff. The exact CI workflow is defined under `.github/workflows/` in the backend repository. Keep routers thin, validate inputs in Pydantic schemas, place workflow logic in services and database queries in repositories. Add tests for both successful behaviour and permission/validation failures.
 
 ## Deployment
 
-The production deployment environment and hosting provider have not been confirmed in the supplied backend configuration.
-
-Before deployment:
-
-1. Configure the production database connection.
-2. Set all required environment variables and secrets.
-3. Apply the database migrations using the project's migration process.
-4. Configure the production API server and network access.
-5. Verify authentication and organisation-level access controls.
-6. Run the automated test suite.
-7. Verify the health endpoint and API documentation.
-8. Review application logs and error handling.
-
-The local development server should not be treated as a production deployment.
-
+The team has identified Heroku as the backend hosting platform. The exact app name, configured environment variables, database add-on and release pipeline must be confirmed from the live Heroku settings and repository deployment workflow. See [Deployment](deployment.md).

@@ -1,116 +1,90 @@
 # Architecture
 
-This page describes the main components of GridFit and how information moves between the field application, operator dashboard, backend API, assessment engine and database.
+GridFit is organised as a browser-based frontend, a Python API, a relational data layer and a deterministic assessment engine. The metering schema is present in the backend, but the supplied source does not include a complete telemetry ingestion path or device firmware.
 
 ## Core principles
 
-GridFit follows these architectural principles:
+- **Decision support, not control:** the platform calculates and presents assessments; it does not operate electrical equipment.
+- **Deterministic results:** given the same input snapshot and software version, the rules engine follows the same calculation path.
+- **Traceable assumptions:** site profiles carry data labels and versions; scenarios store an input snapshot and simulation trace.
+- **Organisation boundaries:** user-facing services scope most business and site operations to the authenticated user's organisation.
+- **Incremental integration:** the frontend, API and proposed metering hardware are separate deliverables and should not be described as fully integrated until verified.
 
-- **Rules-based assessment:** Feasibility assessments use defined rules and business and site inputs.
-- **Separation of responsibilities:** The frontend handles user interaction, the backend manages application logic and data, and the rules engine performs technical assessments.
-- **Organisation-scoped access:** Authenticated users access records belonging to their organisation.
-- **Traceability:** Scenario records preserve assessment inputs and results for later review.
-- **Data quality:** Assessment results depend on the completeness of business, site and metering information.
-- **Operator decision-making:** GridFit supports decisions but does not replace operator judgement.
-
-
-## Component breakdown
-
-### Frontend application
-
-GridFit uses Next.js and React for its frontend application. It provides two main interfaces:
-
-- **Field application:** Supports field operators in registering businesses, recording equipment and managing meter assignments.
-- **Operator dashboard:** Supports mini-grid operators in reviewing sites, prospects, fit checks, comparisons and assessment scenarios.
-
-The frontend communicates with the backend through HTTP API requests.
-
-### Backend API
-
-The backend uses FastAPI to expose REST endpoints.
-
-| Router | Responsibility |
-|---|---|
-| Authentication | User authentication |
-| Businesses | Business records and profiles |
-| Sites | Mini-grid site records |
-| Site profiles | Site data and monitoring imports |
-| Sensor devices | Device registration and status |
-| Meter assignments | Meter assignment management |
-| Scenarios | Assessment creation and retrieval |
-
-### Application services
-
-The service layer contains application logic between API routes and repositories. It manages business records, site information, profiles, meter assignments and scenario operations.
-
-### Rules engine
-
-The rules engine evaluates business demand against available site information and assessment constraints. It returns feasibility outcomes and supporting assessment results.
-
-See [Rules Engine](rules-engine.md) for further details.
-## System architecture
+## Logical component diagram
 
 ```mermaid
 flowchart TD
-    A[Field application] --> C[FastAPI backend]
-    B[Operator dashboard] --> C
-    C --> D[Application services]
-    D --> E[Rules engine]
-    D --> F[(Database)]
-    E --> F
-    F --> D
-    D --> C
-    C --> A
-    C --> B
+    OP[Operator browser] --> FE[Next.js frontend]
+    FA[Field agent browser] --> FE
+    FE --> API[FastAPI application]
+    API --> AUTH[Authentication and role checks]
+    API --> SVC[Business, site, profile and scenario services]
+    SVC --> REPO[SQLAlchemy repositories]
+    REPO --> DB[(Relational database)]
+    SVC --> ENGINE[Deterministic assessment engine]
+    ENGINE --> SVC
+    DEVICE[Proposed meter hardware] -. telemetry path not implemented in supplied source .-> API
+    CSV[Monitoring CSV export] --> API
 ```
 
-The diagram shows the application layers and request flow. It does not represent a confirmed live sensor-to-backend telemetry connection.
+## Component breakdown
 
-## Data layer
+| Component | Responsibility | Implementation evidence |
+|---|---|---|
+| Operator/field frontend | Browser screens for operator and field workflows | Next.js App Router, React, CSS modules and shared components |
+| API application | HTTP endpoints, validation and response serialisation | FastAPI routers and Pydantic schemas |
+| Authentication | Password login, bearer JWT validation and role checks | `routers/auth.py`, `core/security.py`, `core/dependencies.py` |
+| Business/site services | Organisation-scoped business and site operations | `services/businesses.py`, `services/site_service.py` |
+| Site-profile service | Profile creation, versioning, monitoring CSV import and spare-capacity calculations | `services/site_profile_service.py` |
+| Assessment engine | Demand checks and multi-day simulation | `engine/` |
+| Persistence | Relational entities and constraints | SQLAlchemy models and Alembic migrations |
+| Informational website | Public-facing product website | Separate Vite/React project |
+| Metering device | Intended source of business load readings | Reading/device/assignment models exist; firmware and ingestion endpoint were not present in the supplied source |
 
-GridFit uses a relational database to persist application records and support traceability across the assessment workflow.
+## Backend request flow
 
-The main data entities include:
+1. FastAPI receives a request through a router registered in `main.py`.
+2. Pydantic validates request fields and types.
+3. Protected endpoints resolve the bearer token to an active user and apply role checks.
+4. A service coordinates the operation and uses repository functions to access SQLAlchemy models.
+5. Scenario services prepare business profiles and convert the selected site profile into the engine's input shape.
+6. The engine runs the checks and simulation.
+7. The service persists the scenario and returns a response schema.
 
-- **Organisation and users:** Identify organisations and their authorised users.
-- **Sites:** Represent mini-grid locations managed by an organisation.
-- **Site profiles:** Store site capacity and related assessment information.
-- **Businesses:** Store business details and operational information.
-- **Sensor devices:** Represent registered monitoring devices.
-- **Meter assignments:** Associate meters with businesses.
-- **Readings:** Store recorded metering observations.
-- **Scenarios:** Store assessment runs and their results.
-- **Scenario businesses:** Associate businesses with assessment scenarios.
+## Main data relationships
+
+```mermaid
+erDiagram
+    ORGANISATION ||--o{ USERS : has
+    ORGANISATION ||--o{ SITE : owns
+    ORGANISATION ||--o{ SENSOR_DEVICE : registers
+    SITE ||--o{ SITE_PROFILE : versions
+    SITE ||--o{ BUSINESS : hosts
+    BUSINESS ||--o{ METER_ASSIGNMENT : receives
+    SENSOR_DEVICE ||--o{ METER_ASSIGNMENT : assigned
+    METER_ASSIGNMENT ||--o{ READING : records
+    BUSINESS ||--o{ READING : measured_for
+    SITE_PROFILE ||--o{ SCENARIO : assessed_with
+    SCENARIO ||--o{ SCENARIO_BUSINESS : includes
+    BUSINESS ||--o{ SCENARIO_BUSINESS : assessed_in
+```
+
+`Reading` references both `assignment_id` and `business_id`; a composite foreign-key constraint requires the business to match the referenced assignment. A unique constraint prevents two readings for the same assignment at the same `measured_at` timestamp.
 
 ## Data flow
 
-The main assessment workflow follows these steps:
+### Business and scenario flow
 
-1. A field agent registers a business and records its equipment.
-2. A meter is assigned to the business.
-3. Meter readings contribute to the business's recorded demand profile.
-4. An operator initiates a scenario using the relevant business and site information.
-5. The backend service prepares the assessment inputs and invokes the rules engine.
-6. The assessment result is stored for review.
-7. The operator uses the result to support a business-placement or capacity decision.
+Business information is stored against a site. The business profile service retrieves the business's readings, converts timestamps into the configured local timezone and builds 24-hour average and peak power arrays. The scenario service requires the minimum observed-day threshold configured in the site profile, then passes the prepared businesses and site data to the engine.
 
-The completeness and reliability of an assessment depend on the quality of the available business, site and metering information.
+### Site monitoring import
 
-## Security and access boundaries
+An operator can submit CSV text with a source timezone and optional column mapping. The site-profile service parses the export and returns suggested baseline demand, solar profile, settings and data labels. This import response is a preparation step; the operator must create or update a profile with validated values.
 
-GridFit uses authenticated access and organisation-scoped data operations. Users should only access records permitted by their organisation and assigned role.
+### Metering path
 
-API routes, application services and repositories work together to enforce these access boundaries.
+The database includes sensor devices, meter assignments and readings. Meter installation creates a random device token, stores its SHA-256 hash and returns the raw token in the creation response. However, no reading ingestion router, request schema or firmware was found in the supplied backend archive. The architecture diagram therefore marks the device-to-API path as planned/not verified rather than implemented.
 
-## Main entity relationships
+## Scalability and operational boundaries
 
-The database entities support the following relationships:
-
-- An organisation has users and manages sites and businesses.
-- A site can have associated site profiles.
-- A business can have meter assignments and associated readings.
-- Sensor devices are registered and managed within the monitoring workflow.
-- Scenarios contain assessment records for businesses.
-- Scenario-business associations connect assessed businesses to their scenarios.
-
-These relationships support organisation-level data management, monitoring and assessment traceability.
+The API is a conventional synchronous FastAPI/SQLAlchemy application. The supplied code does not demonstrate a queue, streaming broker, distributed worker, telemetry message bus or automatic horizontal-scaling configuration. Any such infrastructure should be documented only after it is added and deployed. The engine's 24-hour arrays and scenario period are bounded by schema constraints, which helps keep individual assessments predictable.

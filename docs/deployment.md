@@ -1,157 +1,99 @@
 # Deployment
 
-This page describes the deployment workflows and configuration identified in the GridFit repositories. It distinguishes confirmed deployment automation from infrastructure whose hosting configuration has not yet been verified.
+The team has identified Heroku for the backend, Vercel for the Next.js frontend and GitHub Pages for this MkDocs documentation site. The exact production project names, URLs, database add-on and environment settings must be verified in the respective hosting dashboards.
 
 ## Deployment architecture
 
-GridFit has separate deployment workflows for the backend API and the documentation site.
-
-| Component | Deployment platform | Deployment workflow |
+| Component | Hosting target | Deployment evidence / note |
 |---|---|---|
-| Backend API | Heroku | Backend repository |
-| Technical documentation | GitHub Pages | Documentation repository |
-| Frontend application | Not confirmed | No deployment configuration identified |
-| Database | Not confirmed | Configured through `DATABASE_URL` |
+| FastAPI backend | Heroku | Confirm app name, release command and configured database from Heroku |
+| Next.js frontend | Vercel | Confirm project, production domain and environment variables from Vercel |
+| MkDocs documentation | GitHub Pages | Repository workflow publishes the documentation site |
+| Informational website | Separate Vite/React project | Confirm its hosting target independently; do not assume it shares the Next.js deployment |
+| Database | PostgreSQL is supported by the backend | Actual production provider/add-on is not established by the supplied source archive |
 
-The backend and documentation deployments are automated through GitHub Actions. The frontend hosting provider and database hosting arrangement require separate confirmation.
+## Backend deployment (Heroku)
 
-## Backend deployment
+The backend repository includes a `Procfile`. Review it and the repository's deployment workflow before changing the start command. A typical ASGI process runs Uvicorn against `main:app`; use the command committed in the project rather than maintaining a second undocumented command.
 
-The backend repository contains `.github/workflows/deploy.yml`.
+Required production configuration includes:
+- `JWT_SECRET` — strong, randomly generated signing secret.
+- Database connection configuration used by `core/database_url.py`.
+- `ACCESS_TOKEN_MINUTES` — optional; defaults to 60 minutes.
+- Any provider-specific port binding expected by the Procfile/runtime.
 
-### Deployment trigger
+Before release:
+1. Confirm the Heroku app and connected database.
+2. Configure secrets through Heroku Config Vars.
+3. Confirm the Python runtime and dependency lockfile.
+4. Run migrations using the release process approved by the team.
+5. Deploy and verify `GET /health`.
+6. Open the deployed `/docs` endpoint only if public API documentation is intended to be exposed.
+7. Review logs for startup and database errors without printing secrets.
 
-The workflow runs when:
+Do not run destructive schema changes manually against production. Back up the database and review Alembic migration behaviour before release.
 
-- Code is pushed to the `main` branch.
-- A maintainer manually starts the workflow using `workflow_dispatch`.
+## Frontend deployment (Vercel)
 
-### Deployment process
+The frontend is a Next.js App Router project. Its package scripts include `build`, `start`, `lint` and formatting commands. The source references `BACKEND_URL` and `NEXT_PUBLIC_API_URL`; confirm which is used in each route and configure the correct value in Vercel.
 
-The workflow performs these steps:
+- Server-only backend origins and credentials must not be exposed to the browser.
+- Variables prefixed with `NEXT_PUBLIC_` are public.
+- Preview and production environments should use the intended API environment.
+- Verify authentication, API proxying, route refreshes and error states after deployment.
 
-1. Runs the reusable backend CI workflow to verify the `main` branch.
-2. Checks that the required Heroku configuration is available.
-3. Checks out the source code.
-4. Sets up the Python version specified in `.python-version`.
-5. Packages the source code into an archive.
-6. Uploads the source to the Heroku Platform API.
-7. Starts a Heroku build and waits for its result.
-8. Checks the deployed application using its `/health` endpoint.
+## Database and migrations
 
-Deployment runs on the self-hosted `classroom-ci` runner.
+SQLAlchemy models use UUIDs, JSON/JSONB variants and relational constraints. Alembic manages schema changes. PostgreSQL is the intended production-class relational database, while SQLite is used in tests/local development in parts of the project.
 
-### Deployment requirements
+The actual production database provider and add-on are not confirmed by the supplied files. Record the provider, plan, backup policy and connection variable name after checking the live Heroku configuration. Never publish connection strings.
 
-The GitHub Actions production environment must contain:
+## Documentation deployment
 
-| Configuration name | GitHub configuration type | Purpose |
-|---|---|---|
-| `HEROKU_API_KEY` | Secret | Authenticates requests to the Heroku Platform API |
-| `HEROKU_EMAIL` | Secret | Required by the workflow's configuration check |
-| `HEROKU_APP_NAME` | Environment variable | Identifies the Heroku application |
-| `HEROKU_APP_URL` | Environment variable | Provides the deployed application URL for health verification |
+The documentation repository uses MkDocs Material. Its `mkdocs.yml` defines the navigation and theme. The GitHub Pages workflow is located under `.github/workflows/`.
 
-The workflow fails before deployment if any required configuration is missing.
+Local validation:
 
-## Frontend deployment
+```bash
+python -m pip install -r requirements.txt
+mkdocs build --strict
+mkdocs serve
+```
 
-The frontend is built with Next.js. Its package scripts include:
+The production documentation URL is:
 
-- `npm run build` to create a production build.
-- `npm run start` to start the production server.
-- `npm run lint` to run ESLint.
-
-The frontend source references `NEXT_PUBLIC_API_URL` for its API configuration.
-
-No Vercel, Netlify, Docker, or other frontend deployment configuration was identified in the inspected frontend repository. The production hosting provider, deployment trigger, and live frontend URL therefore remain unconfirmed.
-
-## Database
-
-The backend reads its database connection configuration from `DATABASE_URL`.
-
-The actual production database provider, database name, backup schedule, retention policy, and recovery process were not established by the inspected deployment workflow.
-
-These details should be confirmed with the deployment administrator before being documented as production infrastructure.
-
-## Metering device deployment
-
-The inspected backend deployment workflow deploys the API application. It does not build or flash metering-device firmware.
-
-The device hardware and firmware deployment process remains separate from the confirmed Heroku deployment workflow. Physical-device telemetry ingestion has not been confirmed as an implemented backend capability.
-
-## How components communicate
-
-The frontend configuration references `NEXT_PUBLIC_API_URL`, which identifies the API base URL used by the frontend.
-
-The backend deployment workflow verifies the deployed API through:
-
-`/health`
-
-The actual production frontend URL, API URL, and end-to-end production connectivity should be confirmed before being recorded as verified deployment endpoints.
+`https://akirachix.github.io/techara-technical-documentation/`
 
 ## Environment variables
 
-The following variable names were identified in the inspected source code and deployment configuration.
+| Variable | Used for | Exposure |
+|---|---|---|
+| `JWT_SECRET` | Backend JWT signing | Secret; backend only |
+| `ACCESS_TOKEN_MINUTES` | Backend access-token lifetime; default 60 | Backend configuration |
+| Database URL variable | SQLAlchemy database connection; exact name is defined in backend config | Secret; backend only |
+| `BACKEND_URL` | Frontend server-side backend origin | Server-only unless code explicitly exposes it |
+| `NEXT_PUBLIC_API_URL` | Public frontend API URL/configuration where referenced | Public browser value |
 
-### Backend application
+Set values in the hosting platform. Do not put actual values in documentation, source control or screenshots.
 
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | Database connection configuration |
-| `JWT_SECRET` | Secret used for JWT signing |
-| `ACCESS_TOKEN_MINUTES` | Access-token lifetime configuration |
+## CI/CD and release controls
 
-### Frontend application
+The documentation repository includes a GitHub Pages workflow. The backend archive includes GitHub Actions workflow files and project configuration for pytest/Ruff checks; inspect the current workflow on the backend default branch for exact triggers and runner labels. The frontend package includes lint/build/test scripts and Husky/lint-staged hooks, but a successful local command is not evidence that a hosted deployment has completed.
 
-| Variable | Purpose |
-|---|---|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL referenced by the frontend |
+For each release, record:
+- Source commit SHA.
+- Build/test result.
+- Migration version.
+- Deployment environment and time.
+- Health-check result.
+- Rollback procedure and responsible owner.
 
-### Heroku deployment
+## Rollback
 
-| Variable | Purpose |
-|---|---|
-| `HEROKU_API_KEY` | Heroku API authentication |
-| `HEROKU_EMAIL` | Heroku configuration check |
-| `HEROKU_APP_NAME` | Target Heroku application |
-| `HEROKU_APP_URL` | URL used for deployment health verification |
-
-Secret values must be stored in the appropriate GitHub Actions secrets or deployment environment configuration. They must never be committed to the repository or included in documentation.
-
-## CI/CD
-
-### Backend
-
-The backend repository contains three workflows:
-
-- `ci.yml` — reusable continuous-integration workflow that installs dependencies and runs Pytest with coverage.
-- `pr-checks.yml` — validates pull-request requirements, runs Ruff checks, and invokes CI.
-- `deploy.yml` — verifies the main branch, deploys to Heroku, and checks the health endpoint.
-
-The deployment workflow depends on the reusable CI workflow succeeding.
-
-### Documentation
-
-The documentation repository contains `.github/workflows/deploy.yml`.
-
-It runs on pushes to `main` and manual workflow dispatch. Its steps are:
-
-1. Check out the documentation repository.
-2. Set up Python 3.11.
-3. Install dependencies from `requirements.txt`.
-4. Build the documentation using `mkdocs build --strict`.
-5. Upload the generated `site` directory as a GitHub Pages artifact.
-6. Deploy the artifact to the GitHub Pages environment.
-
-### Deployment verification
-
-After a deployment, verify:
-
-- The backend workflow completes successfully.
-- The Heroku build reports a successful status.
-- The backend `/health` endpoint responds successfully.
-- The documentation workflow completes successfully.
-- The published documentation site is accessible.
-
-Frontend deployment and production database verification require confirmation of their respective hosting arrangements.
+If a release causes a regression:
+1. Stop further releases.
+2. Identify whether the issue is application code, configuration or a database migration.
+3. Re-deploy the last known-good application build where safe.
+4. Do not blindly downgrade a migration that may have altered or deleted data.
+5. Restore from a verified backup only under the team's incident procedure.
+6. Add a regression test and document the incident.

@@ -1,176 +1,121 @@
 # Frontend Web
 
-The GridFit frontend is a web application built with Next.js and React. It provides two interfaces: an operator dashboard for reviewing mini-grid sites and business prospects, and a field application for collecting business, equipment and meter information.
-
-The frontend currently uses mock data to demonstrate the main workflows. It is not yet fully connected to the backend API.
+The GridFit browser application is implemented in Next.js using the App Router and React. The supplied frontend README describes it as a prototype that uses mock data and is not yet fully connected to the backend.
 
 ## Technology stack
 
-| Technology | Purpose |
-|---|---|
-| Next.js 16.4.3 | Application framework |
-| React 19.3.0 | User interface |
-| TypeScript | Typed frontend utilities |
-| JavaScript | Page and component implementation |
-| CSS Modules | Component and page styling |
-| Lucide React | Icons |
-| Radix UI Dialog | Dialog interface components |
-| React Hook Form | Form management |
-| Vitest | Test runner configuration |
+- Next.js 16.4.x (package manifest)
+- React 19.x
+- JavaScript and TypeScript
+- CSS Modules and global CSS
+- Tailwind CSS 4 is present in the development dependencies
+- Radix UI Dialog
+- Lucide React icons
+- React Hook Form
+- ESLint 9 and Prettier 3
+- Vitest is declared as a test dependency; the test command uses `--passWithNoTests`
 
-## Prerequisites
+Use the exact versions in `package.json` and the lockfile when reproducing the environment.
 
-Before running the project, install:
+## Prerequisites and setup
 
-- Node.js and npm.
-- Git.
-- A code editor such as Visual Studio Code.
+Install a compatible Node.js version and npm. From the frontend repository root:
 
-The repository does not specify a required Node.js version. Use a version compatible with the installed Next.js release.
-
-## Setup and installation
-
-Clone the frontend repository and enter its directory:
-
-\`\`\`bash
-git clone <frontend-repository-url>
-cd techara-frontend
-\`\`\`
-
-Install dependencies:
-
-\`\`\`bash
+```bash
 npm install
-\`\`\`
-
-Start the development server:
-
-\`\`\`bash
 npm run dev
-\`\`\`
+```
 
-Open http://localhost:3000 in a browser.
+The development server is normally available at `http://localhost:3000`.
 
-The operator dashboard is available from the main application routes, while the field application is available under `/field`.
+Useful scripts:
+
+```bash
+npm run build
+npm run start
+npm run lint
+npm run format
+npm run format:check
+npm test
+```
+
+`npm test` is configured to pass when no tests are found. A green result alone therefore does not prove meaningful frontend test coverage.
 
 ## Project structure
 
-The frontend uses the Next.js App Router.
-
-The main application areas include:
-
-- **App routes:** Define dashboard and field application pages.
-- **Components:** Provide reusable interface elements.
-- **Styles:** Contain global and component-specific CSS.
-- **Utilities:** Support shared frontend operations and API communication.
-- **Public assets:** Store static images, icons and application resources.
-
-Refer to the frontend repository for the complete directory structure.
-
-## Pages and features
-
-The operator dashboard provides the following main areas:
-
-| Page | Purpose |
+| Path | Purpose |
 |---|---|
-| Overview | Presents a summary of the operator's GridFit workspace. |
-| Sites | Provides access to registered mini-grid sites. |
-| Prospects | Supports review of prospective businesses. |
-| Fit Check | Provides access to business feasibility assessments. |
-| Compare Sites | Supports comparison of available site information. |
-| Import Data | Provides an interface for importing site data. |
-| Profile Settings | Provides user profile and account settings. |
+| `app/` | Next.js route segments and page components |
+| `app/(auth)/` | Operator authentication and splash pages |
+| `app/(field)/` | Field workflow pages |
+| `app/dashboard/` | Operator dashboard pages |
+| `app/field/` | Field-agent application pages |
+| `app/api/` | Next.js route handlers, including backend proxy/auth route |
+| `components/shared/` | Shared shells, logo, badges, charts, modal, toast and UI components |
+| `lib/` | API helpers, data, formatting, business and meter utilities |
+| `public/` | Static assets and web-app manifests |
 
-The field application supports business registration, equipment recording, meter installation and meter management.
+## Routes
 
-These pages describe the frontend interface. Some workflows currently use mock data and should not be interpreted as fully integrated backend functionality.
+### Operator interface
 
-## Dashboard design references
+| Route | Purpose |
+|---|---|
+| `/splash` | Splash screen |
+| `/login` | Operator login |
+| `/signup` | Account creation |
+| `/dashboard` | Dashboard entry |
+| `/dashboard/overview` | Overview |
+| `/dashboard/sites` | Site list/details |
+| `/dashboard/prospects` | Business prospects |
+| `/dashboard/fit-check/[id]` | Fit-check view for a business |
+| `/dashboard/compare` | Compare sites |
+| `/dashboard/import` | Import data |
+| `/dashboard/settings` | Profile and settings |
 
-The following screenshots are design references from the GridFit Figma files. They illustrate the intended dashboard layout and visual hierarchy; they do not independently confirm that every screen is fully implemented.
+### Field interface
 
-### Overview
+| Route | Purpose |
+|---|---|
+| `/field` | Field app entry |
+| `/field/login` | Field-agent login |
+| `/field/join` | Join/invitation flow |
+| `/field/home` | Field home |
+| `/field/log` | Start business logging |
+| `/field/log/equipment` | Record equipment |
+| `/field/log/meter` | Record meter information |
+| `/field/businesses` | List recorded businesses |
+| `/field/businesses/[id]` | Business details |
+| `/field/meters` | Meter list |
+| `/field/profile` | Field-agent profile |
+| `/field/change-password` | Password-change flow |
 
-![GridFit dashboard overview](assets/images/dashboard/overview-screen.png)
+The repository contains route components for these paths. Availability of a route does not imply that its backend operation is integrated.
 
-### Sites management
+## API integration status
 
-![GridFit sites management](assets/images/dashboard/sites-screen.png)
+The source includes `lib/api.js`, `lib/api.ts`, typed business/meter helpers and a Next.js backend proxy route. The frontend README nevertheless states that the application currently uses mock data and has not yet been connected to the backend. Treat the README as the declared integration status and verify each screen/API pair before describing it as live.
 
-### Prospects
+The frontend code references `BACKEND_URL` and `NEXT_PUBLIC_API_URL`. Do not publish secret values. Confirm which variable is used by the deployed Vercel environment and ensure server-only secrets are not exposed through a `NEXT_PUBLIC_` variable.
 
-![GridFit prospects](assets/images/dashboard/prospects-screen.png)
+## Authentication and state
 
-### Fit Check
+The README says login is simulated for the current prototype: any email/password works on the operator side; the field side accepts a nine-digit phone number and six-digit PIN. This is demonstration behaviour, not production authentication. The backend uses bearer JWTs; a production integration must use the backend's real login response, enforce role checks server-side and handle token expiry/logout safely.
 
-![GridFit Fit Check](assets/images/dashboard/fit-check-screen.png)
+The README also says changes are stored in memory and reset when the page is refreshed. Do not promise durable persistence for mock flows.
 
-### Compare Sites
+## Styling and accessibility
 
-![GridFit site comparison](assets/images/dashboard/compare-site-screen.png)
+Shared UI components live in `components/shared/`; route-specific styles are generally CSS Modules. The design uses Afacad for body/UI text and Alumni Sans for display headings, with brand colours documented in [Brand Guideline](brand-guideline.md).
 
-### Import Data
+New pages should:
+- Use semantic headings and landmarks.
+- Associate form labels with inputs.
+- Provide keyboard-visible focus states.
+- Avoid communicating status through colour alone.
+- Include loading, empty, validation and error states.
+- Keep responsive layouts usable on small field devices.
 
-![GridFit data import](assets/images/dashboard/import-data-screen.png)
+## QA and deployment
 
-### Profile Settings
-
-![GridFit profile settings](assets/images/dashboard/profile-setting-screen.png)
-
-## API integration
-
-The frontend contains shared API utilities and request-handling logic. However, the current application uses mock data and is not fully integrated with the backend.
-
-Before enabling production integration, the frontend must use the configured backend API base URL, handle authentication credentials securely and process API responses consistently.
-
-See [Backend API](backend-api.md) for the backend endpoint documentation.
-
-## Authentication flow
-
-The current frontend includes login and account interface screens. The login experience is simulated and should not be treated as production authentication.
-
-Production authentication must integrate with the backend authentication endpoints and enforce access to protected application routes.
-
-## Styling and design system
-
-The frontend uses CSS Modules and global CSS for styling. The GridFit visual identity uses purple, orange and dark neutral colours.
-
-See [Brand Guidelines](brand-guideline.md) for the visual identity, colour palette, typography and logo references.
-
-## Error handling
-
-Frontend forms and API interactions should provide clear feedback for:
-
-- Required or invalid form fields.
-- Failed requests.
-- Missing or unavailable records.
-- Loading and empty states.
-- Unexpected application errors.
-
-Production API integration should ensure that errors are presented clearly without exposing sensitive backend information.
-
-## Quality assurance
-
-Vitest is configured as the frontend test runner. The existence of this configuration does not by itself confirm that all frontend workflows have automated test coverage.
-
-Frontend verification should include navigation, form validation, responsive layouts, error states and integration with backend endpoints when available.
-
-See [QA Process](qa-process.md) for the wider quality assurance approach.
-
-## Deployment
-
-The frontend is a Next.js application.
-
-The production build command is:
-
-\`\`\`bash
-npm run build
-\`\`\`
-
-To start the production server after a successful build:
-
-\`\`\`bash
-npm run start
-\`\`\`
-
-The deployment environment must provide the required application configuration and backend API settings. The hosting provider and production deployment configuration should be confirmed from the deployment environment before release.
+Run lint, formatting and production build checks before opening a pull request. Add actual Vitest tests as functionality is implemented; `--passWithNoTests` must not be treated as coverage. The frontend is deployed on Vercel according to the team's deployment context; confirm the production project URL and configured build environment in Vercel.

@@ -1,178 +1,96 @@
 # Security
 
-How GridFit protects accounts, data and devices, and the security considerations that remain before production deployment.
+This page describes security controls visible in the supplied backend and frontend source. It also records gaps that must be addressed before production use.
 
 ## Security posture
 
-GridFit implements several application-level security controls in its backend:
-
-- Passwords are hashed using `pwdlib`'s recommended password-hashing configuration.
-- User sessions use signed JSON Web Tokens (JWT).
-- Backend dependencies enforce authentication and role-based access on protected routes.
-- Business, site, scenario and meter-assignment operations apply organisation-scoped access checks.
-- Request data is validated through Pydantic schemas.
-
-These controls do not mean that every part of the application is production-ready. In particular, the inspected sensor-device routes do not show explicit authentication dependencies. Deployment security, frontend authentication integration and device authentication also require further verification.
+The backend implements password hashing, signed bearer tokens, role checks and organisation-scoped queries in several services. These controls are a useful baseline, but they do not amount to a complete security review. In particular, the sensor-device routes currently lack user-authentication dependencies, and device-token verification for reading ingestion is not implemented in the supplied source.
 
 ## Data classification
 
-GridFit handles several categories of information:
-
-| Data category | Examples | Security consideration |
+| Data | Examples | Handling |
 |---|---|---|
-| Personal information | User names, email addresses and phone numbers | Restrict access to authorised users |
-| Account credentials | Password hashes and authentication tokens | Never expose passwords or secrets in responses or logs |
-| Organisation information | Organisation records and ownership relationships | Enforce organisation-level access boundaries |
-| Business information | Business details, equipment and operating schedules | Restrict access to authorised organisation members |
-| Energy and metering information | Readings, device records and meter assignments | Protect data integrity and access |
-| Assessment information | Scenarios, feasibility results and simulation metrics | Preserve the relationship between results and their input data |
-
-This classification is a practical documentation guide, not a completed formal data-classification policy.
+| Account credentials | Passwords, password hashes, JWTs | Never log or expose; store password hashes only |
+| Personal information | Names, email addresses, phone numbers | Limit access to authorised users and avoid unnecessary disclosure |
+| Business information | Business name/type, owner contact, operating hours | Organisation-scoped access; treat as commercially sensitive |
+| Site information | Inverter/battery values, baseline demand, solar profiles, tariff | Restrict to the owning organisation |
+| Metering data | Voltage, current, power, energy and timestamps | Treat as operationally sensitive; preserve provenance and access controls |
+| Device credentials | Raw installation token and stored hash | Raw token is a secret; never commit or log it |
 
 ## Authentication
 
-GridFit's backend provides signup, login and password-change operations through the authentication router.
+The backend's `core/security.py` uses JWT HS256. The signing secret is read from `JWT_SECRET`; the application raises an error if it is missing. `ACCESS_TOKEN_MINUTES` controls token lifetime and defaults to 60 minutes.
 
-### Account registration
+Passwords are handled by the authentication service using the password-hashing library declared in the backend dependencies (`pwdlib[argon2]`). The login endpoint returns a bearer access token. `core/dependencies.py` validates the token, resolves the user from its `sub` claim and rejects missing, invalid, expired or inactive accounts.
 
-The signup process:
+A user with `must_change_password` set is blocked from role-protected operations until the password-change flow is completed.
 
-- Accepts user names, email, organisation name and password.
-- Validates the supplied fields through the authentication schema.
-- Creates an organisation and an operator account.
-- Hashes the password before storing it.
-- Rejects duplicate email addresses and organisation names.
+## Authorisation and tenant isolation
 
-The signup service assigns the `OPERATOR` role. Although the signup schema contains a role field, the inspected service implementation assigns the operator role directly.
+The backend roles are:
+- `operator`
+- `field_agent`
 
-### Login
+Scenario and site-profile endpoints are operator-only. Business operations and selected site/assignment operations allow both roles. Meter removal is field-agent-only.
 
-Users can log in using an email address or phone number and a password. The backend rejects invalid credentials and inactive accounts.
+Services generally query resources using the authenticated user's `organisation_id`. Meter installation checks that the selected device and business belong to the same organisation. This tenant boundary must be preserved in every new repository query and service operation; never trust a client-supplied organisation ID when an authenticated user context is available.
 
-### Password storage
+## Known security gap: sensor-device routes
 
-The authentication service uses `PasswordHash.recommended()` from `pwdlib`. Passwords are hashed before storage; the application does not need to store users' original passwords.
+In the supplied `routers/sensor_devices.py`, register/list/status routes do not declare `get_current_user` or `require_roles` dependencies. Registration accepts organisation and registering-user information through its request schema, while listing/status operations accept an organisation ID as a request parameter.
 
-### Access tokens
-
-The backend uses signed JWT access tokens with the `HS256` algorithm. The token includes:
-
-- `sub`: the user ID
-- `role`: the user's role
-- `org`: the organisation ID
-- `exp`: the token expiry time
-
-The default access-token lifetime is 60 minutes. It can be changed using `ACCESS_TOKEN_MINUTES`.
-
-The `JWT_SECRET` environment variable is required to sign and verify tokens. The backend raises an error if it is not configured.
-
-### Password changes
-
-The password-change operation verifies the current password, rejects a new password that matches the current one, and stores a hash of the new password.
-
-Users marked as requiring a password change are blocked from role-protected operations until they change their password.
-
-## Authorisation
-
-GridFit defines two application roles:
-
-| Role | Intended responsibility |
-|---|---|
-| `OPERATOR` | Manage organisation sites and oversee business assessments |
-| `FIELD_AGENT` | Capture business and metering information in the field |
-
-The backend uses role dependencies to restrict selected operations. For example, site creation and updates are operator-only, while business operations are available to both defined roles.
-
-### Organisation scoping
-
-The inspected business, site, scenario and meter-assignment services use the authenticated user's organisation context when accessing relevant records.
-
-Business creation checks that the selected site belongs to the user's organisation. Field agents have an additional restriction when updating businesses: they can update only businesses they logged, and only while those businesses remain prospective.
-
-### Sensor-device access consideration
-
-The inspected sensor-device routes accept an `organisation_id` in request parameters or request data and do not show an explicit `get_current_user` or role dependency.
-
-This differs from the organisation-scoped access pattern used by other services. The device endpoints should be reviewed and protected using authenticated organisation context before production use. A client-supplied organisation ID should not be treated as proof of authorisation.
+This permits callers to attempt cross-organisation operations unless protected elsewhere by deployment infrastructure. No such protection is visible in the supplied router. Before production:
+1. Require an authenticated user on all device-management routes.
+2. Derive `organisation_id` and `registered_by` from the authenticated user, not the request body/query string.
+3. Apply explicit role permissions.
+4. Add tests proving one organisation cannot access another organisation's devices.
+5. Review the change with the team before deployment.
 
 ## Input validation
 
-The backend uses Pydantic schemas to validate request data before it reaches application services.
+Pydantic schemas validate field types, lengths, ranges and nested structures. SQLAlchemy models also define database constraints for important invariants, including unique business names per site, valid operating days, positive site-profile values, valid state-of-charge ordering and reading constraints.
 
-Authentication schemas, for example, define required fields and length limits for names, identifiers and passwords. Other resource schemas validate data used by business, site, device, assignment and scenario operations.
-
-The frontend also contains form handling and validation logic. However, frontend validation is not a substitute for backend validation because requests can be sent without using the frontend.
+Validation should occur at more than one boundary: request schema, service/business rules and database constraints. Do not rely on frontend validation as a security control.
 
 ## Device security
 
-The backend includes helper functions for generating random device tokens and hashing device tokens using SHA-256.
+Meter assignment generates a random URL-safe token and stores its SHA-256 hash. The raw token is returned in the assignment-creation response and is not part of the normal assignment read schema.
 
-However, the inspected source does not establish a complete device-authentication flow that uses these helpers to authenticate incoming device requests. The sensor-device routes also do not show explicit authentication dependencies.
+However, the supplied backend does not include a device-ingestion endpoint or code that verifies a presented device token. TLS enforcement, token rotation/revocation and device request replay protection are also not demonstrated in the supplied source. These are required design tasks before device telemetry can be treated as authenticated.
 
-Before production deployment, the device workflow should establish how devices receive credentials, authenticate requests, rotate or revoke credentials, and associate each device with an authorised organisation.
+## Secrets and deployment
 
-Transport security should also be configured for deployed device and API communication. No application-level HTTPS enforcement was identified in the inspected Python source; deployment and reverse-proxy configuration must be checked separately.
+- Keep `JWT_SECRET` and database credentials in the hosting provider's environment configuration.
+- Never commit `.env` files, database dumps containing real personal data, access tokens or raw device tokens.
+- Do not expose server-only `BACKEND_URL` values to browser code.
+- Review use of `NEXT_PUBLIC_API_URL`; values with this prefix are public to the browser bundle.
+- Rotate secrets if they are exposed.
+- Use separate secrets and databases for development, test and production.
 
-## Secrets management
+## Data protection and privacy
 
-The backend reads its JWT signing secret from the `JWT_SECRET` environment variable. Token lifetime is configurable through `ACCESS_TOKEN_MINUTES`.
+The platform may process personal information and commercially sensitive operational data. The team should map data collection and retention, provide an appropriate privacy notice, limit access, define deletion/correction processes and assess obligations under applicable Zambian data-protection law. This page is technical documentation, not legal advice. Obtain a qualified legal review before making compliance claims.
 
-Security requirements:
+## Logging and incident response
 
-- Keep signing keys, database credentials and other secrets outside source control.
-- Do not commit real `.env` files or credentials.
-- Use separate secrets for development, testing and production.
-- Restrict access to production environment variables.
-- Rotate secrets if they are exposed or compromised.
+Logs should capture request IDs, timestamps, endpoint names, outcome codes and relevant non-sensitive diagnostic context. Do not log passwords, bearer tokens, raw device tokens or full personal/business payloads unnecessarily.
 
-The inspected source confirms the JWT environment-variable configuration. The production secrets-management process must be verified in the deployment environment.
+For a suspected incident:
+1. Restrict affected credentials or accounts.
+2. Preserve relevant logs and deployment metadata.
+3. Identify affected organisations and records.
+4. Rotate exposed secrets and invalidate affected tokens where possible.
+5. Patch the root cause and add regression tests.
+6. Notify responsible project/security owners and follow the applicable legal and contractual notification process.
 
-## Data protection
+## Production readiness checklist
 
-GridFit may process personal information, organisation records and business-related operational data.
-
-The Zambia Data Protection Act, 2021 is relevant when determining how personal data should be collected, used, stored, accessed and retained. This documentation does not establish that GridFit has completed a legal compliance assessment or meets every applicable requirement.
-
-Before production use, the project should review:
-
-- The purpose and lawful basis for collecting personal information.
-- User notices and consent requirements, where applicable.
-- Data minimisation and retention periods.
-- Access, correction and deletion processes.
-- Data sharing and third-party service arrangements.
-- Appropriate technical and organisational safeguards.
-- Procedures for handling personal-data incidents.
-
-Legal and regulatory requirements should be confirmed with qualified guidance.
-
-## Incident response
-
-The inspected backend includes exception handlers and some diagnostic output. A complete incident-response policy or centralised security-monitoring process was not established from the inspected source.
-
-A production incident process should include:
-
-1. Identify and record the suspected incident.
-2. Restrict affected accounts, tokens, devices or services where necessary.
-3. Preserve relevant logs and evidence.
-4. Investigate the cause and determine which data or services were affected.
-5. Restore secure operation and rotate compromised credentials.
-6. Assess notification and reporting obligations.
-7. Record corrective actions to reduce the chance of recurrence.
-
-Diagnostic output should be reviewed before production use. In particular, avoid logging passwords, access tokens, signing secrets or unnecessary personal information. Use structured logging with appropriate access and retention controls.
-
-## Summary
-
-GridFit's backend implements password hashing, JWT-based user authentication, role checks and organisation-scoped access in several core services.
-
-The following items require further verification or implementation before production deployment:
-
-- Add and test authenticated organisation-scoped access for sensor-device endpoints.
-- Confirm the complete device-token authentication lifecycle.
-- Verify HTTPS and CORS configuration in the deployment environment.
-- Confirm production secrets storage and rotation procedures.
-- Review logging, monitoring, backups and incident-response procedures.
-- Complete a data-protection review against applicable legal requirements.
-- Integrate and test frontend authentication with the backend.
-
-Security should be reassessed as the application, device workflow and deployment environment evolve.
+- [ ] Protect sensor-device management routes with authentication and organisation scoping.
+- [ ] Implement and test device-token verification before accepting readings.
+- [ ] Enforce HTTPS/TLS at the public edge.
+- [ ] Store secrets only in deployment secret stores.
+- [ ] Review CORS, trusted hosts and proxy settings.
+- [ ] Add rate limiting and abuse monitoring to public authentication endpoints.
+- [ ] Confirm password reset, account recovery and token revocation behaviour.
+- [ ] Define data retention, backup and restore procedures.
+- [ ] Conduct dependency, access-control and application security reviews.

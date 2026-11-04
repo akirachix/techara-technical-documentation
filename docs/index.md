@@ -10,7 +10,7 @@ hide:
 
 ![GridFit logo](assets/images/gridfit-mark.svg)
 
-GridFit is a mini-grid business feasibility and decision-support platform developed by TechAra. It helps mini-grid operators evaluate whether prospective businesses can be supported by available electricity capacity, using business information, equipment demand and metering data.
+GridFit is a decision-support platform for mini-grid operators. It combines business information, observed electricity-use data and site operating limits to help operators assess whether a business load can be supported by an existing mini-grid.
 
 [Get started](overview.md){ .md-button .md-button--primary }
 [How it's built](architecture.md){ .md-button }
@@ -23,44 +23,53 @@ GridFit is a mini-grid business feasibility and decision-support platform develo
 
 <div class="grid cards" markdown>
 
--   **Evidence-based assessment**
+-   **Use evidence, not guesswork**
 
-    Evaluate business electricity requirements using recorded business information and metering data where available.
+    Business profiles can be derived from time-stamped meter readings rather than relying only on a business owner's estimate.
 
--   **Explainable fit checks**
+-   **Explain the assessment**
 
-    Present feasibility outcomes with the checks and constraints that contribute to the result.
+    The backend evaluates power, motor-starting, energy and battery constraints and returns check results and explanatory reasons.
 
--   **Site comparison**
+-   **Compare existing sites**
 
-    Compare how a business performs against different mini-grid sites before making a connection decision.
+    Operators can run scenarios against multiple site profiles and compare the resulting outcomes.
 
--   **Field-to-operator workflow**
+-   **Keep the operator in control**
 
-    Support field teams in recording businesses and installing meters, while giving operators tools to review prospects and scenarios.
+    GridFit records assessments and decisions. It does not switch equipment, dispatch generation or control a mini-grid.
 
 </div>
 
-## Platform highlights
+## Platform at a glance
 
-| Capability | Purpose |
+| Component | Current implementation |
 |---|---|
-| Business registration | Capture prospective business information. |
-| Equipment recording | Record the electrical equipment associated with a business. |
-| Meter management | Register, assign and monitor metering devices. |
-| Business profiles | Use available metering readings to build a business load profile. |
-| Fit checks | Evaluate a business against a site's available capacity and operating constraints. |
-| Site comparison | Compare feasibility outcomes across sites. |
-| Scenario management | Save and review assessment scenarios and business decisions. |
+| Operator and field interface | Next.js application using React |
+| API | FastAPI |
+| Persistence | SQLAlchemy models with SQLite/PostgreSQL dialect support |
+| Assessment | Python rules and simulation engine |
+| Metering data model | Reading and meter-assignment tables |
+| Informational website | Separate Vite/React application |
+| Documentation | MkDocs Material, published through GitHub Pages |
 
-## Who uses GridFit?
+The frontend repository README describes the UI as a mock-data prototype and says it is not yet fully connected to the backend. Treat screen flows as demonstrations unless a specific integration is verified.
 
-- **Mini-grid operators:** Review prospective businesses, assess site suitability, compare scenarios and make informed connection decisions.
-- **Field operators:** Visit businesses, record business and equipment information, and install or manage metering devices.
+## Documentation map
 
-## Documentation guide
-
-Use the navigation to explore the product, architecture, API, rules engine, frontend, field workflows, metering device, security, deployment and quality assurance processes.
+- [Overview](overview.md) — purpose, users, workflow and scope.
+- [Architecture](architecture.md) — components and data movement.
+- [Backend / API](backend-api.md) — API routes, data models and setup.
+- [Rules Engine](rules-engine.md) — assessment inputs, checks and outcomes.
+- [Frontend Web](frontend-web.md) — operator interface and development.
+- [Field App](field-app.md) — field-agent workflows.
+- [Metering Device](metering-device.md) — reading model, proposed hardware and implementation gaps.
+- [Security](security.md) — authentication, authorisation and known gaps.
+- [Deployment](deployment.md) — hosting and release considerations.
+- [QA Process](qa-process.md) — automated and manual verification.
+- [Developer Guide](developer-guide.md) — contribution workflow and conventions.
+- [Brand Guideline](brand-guideline.md) — visual identity.
+- [Glossary](glossary.md) — terminology.
 
 ---
 

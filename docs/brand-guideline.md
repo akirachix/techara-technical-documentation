@@ -1,90 +1,62 @@
 # Brand Guideline
 
-The visual rules for anything GridFit: the app, the informational site, slides, and these docs.
+The visual rules for GridFit across the app, informational website, slides and technical documentation.
 
 ![GridFit brand sheet](assets/images/brand-sheet.png){ width="320" }
 
 ## Logo
 
-The logo is an orange open ring with a purple "F" sitting inside its opening. It comes in three layouts:
+The logo is an orange open ring with a purple “F” sitting inside its opening. It is used in vertical, horizontal and standalone layouts.
 
-| Layout | When to use it |
+| Layout | Recommended use |
 |---|---|
-| Vertical | Mark above the "GridFit" wordmark. Default for square spaces. |
-| Horizontal | Mark beside the wordmark. Headers and wide banners. |
-| Standalone | Mark on its own. App icons, favicons, small spaces. |
+| Vertical | Mark above the GridFit wordmark; square spaces |
+| Horizontal | Mark beside the wordmark; headers and wide banners |
+| Standalone | App icons, favicons and compact spaces |
 
-On a purple background the "F" and wordmark go white and the ring stays orange. On an orange background the ring and "Grid" go white and the "F" stays purple.
+On a purple background, the “F” and wordmark are white while the ring remains orange. On an orange background, the ring and “Grid” are white while the “F” remains purple.
 
-!!! note "Logo assets"
-    GridFit mark SVG files are included in the documentation assets. The complete vertical and horizontal logo lockups should be checked against the approved brand exports before being used in new materials.
+The image assets in the documentation repository should be checked against the approved Figma exports before a final brand handover. Do not replace official exports with traced or improvised artwork.
 
 ## Colour palette
 
 | Swatch | Name | Hex |
 |---|---|---|
-| <span class="gf-swatch" style="background:#46317C"></span> | Primary colour 1 | `#46317C` |
-| <span class="gf-swatch" style="background:#F79438"></span> | Primary colour 2 | `#F79438` |
-| <span class="gf-swatch" style="background:#45403B"></span> | Secondary colour | `#45403B` |
+| <span class="gf-swatch" style="background:#46317C"></span> | Primary purple | `#46317C` |
+| <span class="gf-swatch" style="background:#F79438"></span> | Primary orange | `#F79438` |
+| <span class="gf-swatch" style="background:#45403B"></span> | Secondary dark | `#45403B` |
+
+Use purple for primary navigation and actions, orange for emphasis and active states, and the secondary dark colour for supporting text. Maintain sufficient contrast for all text and interactive controls.
 
 ## Typography
 
-| Typeface | Used for |
+| Typeface | Use |
 |---|---|
-| Afacad | Body text, UI text |
+| Afacad | Body and interface text |
 | Alumni Sans | Headings and display text |
+| JetBrains Mono | Code examples in technical documentation |
 
-Both come in regular, medium, bold, italic and bold italic.
+The documentation theme currently configures Afacad for body text and JetBrains Mono for code. The frontend README records Afacad and Alumni Sans as the app fonts.
 
 ## Iconography
 
-Line-style icons in four states: purple filled, orange filled, filled inside a light orange circle (active/selected), and outline. The set covers home, profile, back, call, menu, close, power, energy, plug, settings, alerts and location.
+Use consistent line-style icons. The documented states include purple fill, orange fill, a filled icon in a light-orange active circle and outline. Icons should be recognisable at small sizes and should not be the only carrier of meaning.
 
 ## Buttons
 
-Pill-shaped and rectangular buttons, each in four states:
-
 | State | Style |
 |---|---|
-| Default | Purple fill, white text |
-| Hover / highlight | Orange fill, white text |
-| Disabled | Light purple fill, white text |
-| Secondary | White fill, purple outline and text |
+| Default | Purple fill with white text |
+| Hover/highlight | Orange fill with white text |
+| Disabled | Light purple fill with white text |
+| Secondary | White fill with purple outline and text |
 
-## Brand reference images
+Use clear action labels. Disabled states must remain legible and should not be communicated by colour alone.
 
-The following images provide visual references for the GridFit identity and interface styling.
+## UI consistency
 
-### Logo displays
-
-![GridFit logo displays](assets/images/brand/logo-displays.png)
-
-### Colour palette
-
-![GridFit colour palette](assets/images/brand/colour-palette.png)
-
-### Typography
-
-![GridFit typography](assets/images/brand/typography.png)
-
-### Backgrounds
-
-![GridFit backgrounds](assets/images/brand/backgrounds.png)
-
-### Buttons
-
-![GridFit button styles](assets/images/brand/buttons.png)
-
-### Iconography
-
-![GridFit iconography](assets/images/brand/iconography.png)
-
-## Brand asset files
-
-| Asset | Location |
-|---|---|
-| Standard GridFit mark | `assets/images/gridfit-mark.svg` |
-| White GridFit mark | `assets/images/gridfit-mark-white.svg` |
-| Favicon | `assets/images/favicon.png` |
-| Brand reference sheet | `assets/images/brand-sheet.png` |
-
+- Use the same spacing, typography and colour tokens across related screens.
+- Keep field workflows readable on narrow screens.
+- Use consistent labels for business, site, meter and assessment concepts.
+- Provide focus, error, success and disabled states.
+- Preserve the brand while meeting accessibility contrast and keyboard-use requirements.

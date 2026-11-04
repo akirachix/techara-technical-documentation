@@ -1,205 +1,108 @@
 # QA Process
 
-This page describes how GridFit is tested, how developers run the available checks, and how automated quality gates are applied before changes are merged.
+GridFit requires tests at API, data, rules-engine, frontend and deployment boundaries. A passing unit-test suite does not prove that a meter is safe, a device is transmitting or a deployed frontend is connected to the production API.
 
 ## Test strategy
 
-GridFit uses backend automated tests, database constraint tests, API tests, frontend tooling checks and GitHub Actions pull-request validation.
+| Layer | Main objective | Recommended evidence |
+|---|---|---|
+| Schemas | Reject invalid payloads and boundary values | Pydantic validation tests |
+| Services/repositories | Enforce business rules and organisation scope | Pytest with isolated database fixtures |
+| Database | Enforce foreign keys, uniqueness and check constraints | Migration/integration tests |
+| Rules engine | Produce correct deterministic results | Unit tests for each check and aggregation |
+| API | Verify status codes, auth and response shape | FastAPI TestClient/httpx |
+| Frontend | Verify forms, routes, error states and key interactions | Vitest/component tests and browser smoke tests |
+| Hardware | Verify measurement accuracy and safe operation | Calibrated bench tests and qualified electrical review |
+| Deployment | Verify runtime config and service health | Smoke tests against deployed environments |
 
-The test strategy covers:
+## Running backend tests
 
-- **Unit and service tests:** Validate individual application operations and business rules.
-- **API tests:** Verify endpoint behaviour, request validation, response codes and access restrictions.
-- **Database tests:** Verify model relationships, constraints and data integrity.
-- **Rules-engine tests:** Check feasibility calculations, assessment outcomes and edge cases.
-- **Frontend checks:** Provide test, lint, formatting and production-build commands.
-
-Tests should verify both successful operations and expected failures, including invalid input, missing records, duplicate records and unauthorised access.
-
-## Backend testing
-
-The backend uses:
-
-| Tool | Purpose |
-|---|---|
-| Pytest | Automated test execution |
-| pytest-cov | Test coverage reporting |
-| Ruff | Python linting and formatting |
-| SQLite | Database used by the CI test workflow |
-| FastAPI TestClient | API-level test execution |
-
-Test discovery is configured in `pyproject.toml`:
-
-- Test directory: `tests/`
-- Test file naming: `test_*.py`
-- Python path: project root
-
-### Running backend tests
-
-From the backend repository:
+From the backend repository root:
 
 ```bash
-cd ~/techara-backend
-uv run --no-sync pytest --cov --cov-report=term-missing
-uv run --no-sync pytest tests/test_business.py
-uv run --no-sync pytest tests/api/
-### Coverage reporting
-
-Coverage measures application source code while excluding tests and the virtual environment.
-
-The latest recorded backend test run completed with **297 passing tests and 96% code coverage**. One Starlette deprecation warning was reported.
-
-## Backend test coverage
-
-The existing test suite includes:
-
-| Area | Test coverage |
-|---|---|
-| Authentication and users | Authentication and user operations |
-| Businesses | Creation, listing, details, updates and profiles |
-| Sites | Creation, retrieval, listing and updates |
-| Site profiles | Profile operations and imports |
-| Scenarios | Creation, listing, updates, deletion and comparison |
-| Meter assignments | Assignment creation and removal |
-| Sensor devices | Registration, duplicate serials and status filtering |
-| Readings | Measurement validation and database constraints |
-| Rules engine | Feasibility checks and evaluation |
-| Authorisation | Protected API operations and role restrictions |
-
-
+uv sync --all-groups
+uv run pytest
+uv run pytest -q
+uv run pytest --cov
+uv run ruff check .
 ```
 
-## Postman and API verification
+Use the project's fixtures and test database configuration. Do not run destructive tests against production data.
 
-No exported Postman collection was identified in the inspected backend repository. The database files containing `postman` in their names are not exported Postman collections.
+## Important backend test cases
 
-The FastAPI application provides interactive API documentation through:
+### Authentication and access control
 
-- `/docs`
-- `/openapi.json`
+- Missing, malformed, expired and invalid-signature JWTs return 401.
+- Inactive users are rejected.
+- Users who must change their password cannot access protected role routes.
+- Operator-only endpoints reject field agents.
+- Field-agent-only meter removal rejects operators.
+- Organisation A cannot retrieve or modify Organisation B's sites, businesses, devices, assignments or scenarios.
 
-Developers can use `/docs` to inspect endpoints, request schemas, parameters and responses while the backend is running.
+### Meter assignments and readings
 
-API verification should include:
+- Only active devices can be installed.
+- A device cannot have two open assignments.
+- A business cannot have two open assignments.
+- Assignment creation returns a raw token once and persists only its hash.
+- Removal is rejected when already removed.
+- Reading constraints reject invalid voltage and negative measurements.
+- Duplicate assignment/timestamp readings are rejected.
+- Reading business ID must match the assignment's business ID.
 
-1. Successful requests using valid data.
-2. Missing and invalid request fields.
-3. Requests for records that do not exist.
-4. Duplicate record and assignment attempts.
-5. Requests made by users with insufficient permissions.
-6. Organisation-level data isolation.
-7. Expected error responses and status codes.
+The supplied code includes model constraints and assignment service behaviour. It does not include a reading-ingestion route, so end-to-end ingestion tests must be added when that feature is implemented.
 
-A maintained Postman collection should be added when one is available and verified.
+### Site profiles and rules engine
 
+- 24 hourly values are required for baseline and each solar profile.
+- Solar and baseline values cannot be negative.
+- State-of-charge minimum must be lower than maximum.
+- Charge/discharge efficiencies must be greater than zero and no more than one.
+- Missing inverter continuous/surge values produce the documented unknown results.
+- Power above the inverter limit fails.
+- Startup duration and surge-power limits are tested independently.
+- Energy deficit and battery unserved-energy tolerance are tested at, below and above boundaries.
+- Missing/insufficient observed days prevents scenario creation.
+- Site comparisons require 2–5 distinct site IDs.
 
-## Frontend testing
+## Frontend QA
 
-The GridFit frontend uses Next.js, React, TypeScript and Vitest.
-
-The following scripts are defined in `package.json`:
-
-| Check | Command |
-|---|---|
-| Development server | `npm run dev` |
-| Production build | `npm run build` |
-| Linting | `npm run lint` |
-| Formatting | `npm run format:check` |
-| Automated tests | `npm test` |
-
-Run frontend checks from the frontend repository:
+The frontend `package.json` declares:
 
 ```bash
-cd ~/techara-frontend
-npm install
-npm test
 npm run lint
 npm run format:check
 npm run build
-
+npm test
 ```
 
-### Frontend testing status
+The test command is `vitest run --passWithNoTests`; zero discovered tests will not fail the command. The frontend README describes mock data and in-memory state, so manually verify what is genuinely persisted and what is demonstration-only.
 
-Vitest is listed as a development dependency, and the test script uses `vitest run --passWithNoTests`.
+Suggested manual checks:
+- Responsive layouts at desktop and narrow mobile widths.
+- Keyboard navigation and visible focus.
+- Required-field and invalid-field feedback.
+- Loading, empty and error states.
+- Browser refresh behaviour.
+- Session expiry and logout when real authentication is integrated.
+- Operator/field-agent role boundaries.
+- API failure and network-loss handling.
 
-Inspection did not identify test files using the standard `.test.ts`, `.test.tsx`, `.spec.ts` or `.spec.tsx` naming patterns. No `vitest.config.*` or `vite.config.*` file was found at the inspected project depth.
+## Meter hardware QA
 
-Because `--passWithNoTests` allows the command to succeed when no tests are collected, a successful test command must not be interpreted as evidence of frontend test coverage.
+Before any field deployment:
+- Verify electrical isolation, protection and enclosure safety with a qualified professional.
+- Compare voltage/current/power/energy readings against a calibrated reference instrument.
+- Test representative resistive and motor loads.
+- Verify timestamp accuracy and cumulative energy counter behaviour.
+- Test communication loss, retry, buffering, duplicate delivery and recovery.
+- Confirm device credentials cannot be reused across organisations or assignments.
 
-Dedicated tests should be introduced for business registration, equipment capture, meter installation, dashboard interactions, form validation and API integration.
+No hardware calibration report or firmware test evidence was included in the supplied archives.
 
+## CI and release checks
 
-## Continuous integration
+The backend repository contains GitHub Actions workflows and configuration for pytest/Ruff checks. Review the active workflow definitions for exact branch triggers and runner configuration. The docs repository has a GitHub Pages workflow. The frontend has local scripts and Husky hooks; confirm any additional Vercel build checks in the Vercel project.
 
-The backend repository uses GitHub Actions to automate quality checks.
-
-The main workflows are:
-
-| Workflow | Responsibility |
-|---|---|
-| `ci.yml` | Reusable backend test and coverage workflow |
-| `pr-checks.yml` | Pull-request requirements, linting, formatting and CI gate |
-| `deploy.yml` | Deployment workflow |
-
-### Backend CI workflow
-
-The reusable CI workflow:
-
-- Runs on a self-hosted runner labelled `classroom-ci`.
-- Uses the Python version specified in `.python-version`.
-- Installs dependencies with `uv`.
-- Uses SQLite for the test database.
-- Runs Pytest with coverage and missing-line reporting.
-
-The CI workflow uses `workflow_call`, meaning it is invoked by another workflow rather than independently triggered by every push.
-
-### Pull-request quality gate
-
-Pull requests targeting `main` or `develop` trigger `pr-checks.yml`.
-
-The workflow validates:
-
-- A descriptive pull-request title.
-- A sufficiently detailed description.
-- Evidence of testing.
-- Updated tests when application Python files change, unless an approved `no-tests-needed` exception is documented.
-- Ruff lint checks.
-- Ruff formatting checks.
-- Backend tests and coverage.
-
-A final gate requires the preceding checks to succeed. The workflow also posts or updates a pull-request checklist and requires peer review before merging.
-
-### Pull-request expectations
-
-Before requesting review:
-
-1. Explain what changed and why.
-2. Describe the tests and checks performed.
-3. Add or update tests for application changes.
-4. Resolve lint and formatting failures.
-5. Confirm that automated checks pass.
-6. Request peer review before merging.
-
-
-## Known QA gaps
-
-The following areas require further verification or implementation:
-
-- Frontend automated test files and meaningful test coverage.
-- A maintained and exported Postman collection.
-- A complete physical-device-to-backend reading-ingestion test workflow.
-- Authentication and organisation-scoping tests for sensor-device endpoints.
-- Verification of device-token authentication during reading ingestion.
-- Current lint and formatting status across the complete backend repository.
-
-QA status should be updated as these capabilities are implemented and tested.
-
-## Related documentation
-
-- [Backend API](backend-api.md)
-- [Rules Engine](rules-engine.md)
-- [Security](security.md)
-- [Metering Device](metering-device.md)
-- [Developer Guide](developer-guide.md)
-
+A release is not complete until the build succeeds, migrations are reviewed/applied, health checks pass and the key user workflows are smoke-tested.

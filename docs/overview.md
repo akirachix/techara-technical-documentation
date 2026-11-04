@@ -1,114 +1,58 @@
 # Overview
 
-This page introduces GridFit, the problem it addresses, its intended users and the main workflows supported by the platform.
-
 ## Product definition
 
-GridFit is a mini-grid business feasibility and decision-support platform. It helps mini-grid operators assess whether a prospective small or medium-sized enterprise (SME) can be supported by a mini-grid site.
+GridFit is a mini-grid business-load assessment and decision-support platform. It helps an operator evaluate whether one or more small and medium-sized enterprise (SME) loads can be supported by an existing mini-grid site under a defined site profile and operating scenario. It combines site-level generation, inverter and battery information with business operating hours and measured or otherwise labelled demand data. The backend produces a repeatable assessment, check-level explanations, metrics and a simulation trace.
 
-The platform brings together business information, electrical equipment requirements, metering data, site capacity information and configurable assessment parameters. It uses these inputs to produce feasibility outcomes that help operators evaluate prospective connections and compare alternatives.
+GridFit is intended to make connection discussions more evidence-led. It is not a substitute for a licensed electrical engineer, a grid interconnection study or an operator's final commercial and safety approval.
 
-GridFit is intended to support operational decision-making. Its assessment results do not replace electrical engineering judgement, site inspections or the operator's responsibility to approve a connection.
+## Problem addressed
 
-## Problem statement
+Mini-grid operators need to understand both the electricity available at a site and the demand a prospective business will introduce. Business owners may not know their peak demand, daily energy use or motor-starting characteristics. A single monthly energy estimate can conceal short high-power events or evening demand. Conversely, a mini-grid may have capacity that is not being used productively.
 
-Mini-grid operators need to understand whether new business connections can be supported by the electricity capacity available at their sites.
-
-A business may have equipment with different power requirements, operating schedules and patterns of electricity consumption. Assessing a prospective connection using only an estimated total demand can leave important details unexamined.
-
-At the same time, operators need to make practical decisions about which businesses to assess, which sites may be suitable and what constraints could affect a proposed connection.
-
-GridFit addresses this decision-support problem by organising business and site information, supporting metering workflows and evaluating prospective business demand against available site information.
-
-The wider context includes two related challenges:
-
-- **SME electricity reliability:** Businesses that depend on electricity need power that is sufficiently available and reliable for their operations.
-- **Mini-grid capacity utilisation:** Operators need better information about existing capacity and prospective demand when evaluating additional productive-use customers.
-
-> **Research note:** Quantitative claims about load shedding, SME losses, mini-grid utilisation or national electricity access should be supported by referenced research before publication. This documentation does not assign unsupported statistics to these challenges.
+GridFit structures information about site capacity and business demand so that an operator can compare the two consistently. The platform's value depends on the quality, recency and provenance of the input data. A result based on estimated values is not equivalent to one based on a sufficiently long period of observed readings.
 
 ## Target users
 
-### Mini-grid operators
+| User | Main tasks represented in the application/API |
+|---|---|
+| Mini-grid operator | Create and manage sites, maintain site profiles, run scenarios, compare sites, review outcomes and record decisions. |
+| Field agent | Log businesses, record operating/equipment information and support meter installation workflows. |
+| Technical administrator/developer | Configure the service, maintain data and deploy or test the software. |
 
-Operators use GridFit to manage and assess prospective business connections.
+The backend defines two user roles: `operator` and `field_agent`. Operator-only access is applied to site-profile and scenario operations. Several business and site read operations allow both roles.
 
-Their activities include:
+## Core workflow
 
-- Reviewing registered businesses.
-- Reviewing business equipment and available load information.
-- Managing mini-grid sites and site profiles.
-- Reviewing fit-check results.
-- Comparing a business across available sites.
-- Creating and reviewing assessment scenarios.
-- Recording decisions about prospective businesses.
-- Managing metering devices and assignments.
+1. **Set up the site.** An operator creates a site and records its technical profile: inverter limits, battery characteristics, solar profile, baseline demand, tariff, operating settings and data labels.
+2. **Record a business.** A field agent or operator records the business, owner contact details, operating hours, days per month and optional startup-load information.
+3. **Collect load evidence.** A meter assignment associates a registered sensor device with a business. The database includes a reading model. The current backend archive does not expose a reading-ingestion API or device firmware, so end-to-end telemetry collection must not be assumed to be operational.
+4. **Build the business profile.** The business service groups readings into local hourly averages and peaks and checks whether the configured minimum number of observed days has been reached.
+5. **Run an assessment.** An operator runs a scenario using a site-profile version, a starting battery-energy value, a solar-day selection, a period and a set of businesses.
+6. **Review and decide.** The result includes an outcome, limiting check, metrics, check results, a simulation trace and a snapshot of the inputs. Scenario-business records can store a `pursue` or `not_pursue` decision and its note.
 
-### Field operators
+## Key capabilities in the backend
 
-Field operators support the collection of information from businesses and the installation of meters.
+- Organisation-scoped users, sites, businesses, sensor devices and meter assignments.
+- Versioned site profiles.
+- Import of monitoring CSV exports to derive baseline-demand and solar profiles.
+- Business profile generation from persisted meter readings.
+- Deterministic power, startup, energy and battery checks.
+- Scenario creation, site comparison, scenario listing, renaming and deletion.
+- Recording a decision against a business in a scenario.
 
-Their activities include:
+The frontend contains operator and field routes for the corresponding workflows, but its README explicitly describes the frontend as a mock-data prototype not yet connected to the backend. Do not represent every screen action as a live API integration.
 
-- Registering a prospective business.
-- Recording business equipment.
-- Capturing information required for assessment.
-- Installing or assigning a metering device.
-- Reviewing assigned businesses and meters.
+## What GridFit does not do
 
-The field workflow is designed to support data collection close to the business being assessed.
+- It does not use AI or machine learning for the fit assessment. The backend assessment is deterministic Python logic.
+- It does not control generation, inverters, batteries, meters or customer loads.
+- It does not automatically approve a connection or guarantee revenue, safety, reliability or profitability.
+- It does not design or size a new mini-grid.
+- It does not automatically change a business's operating hours to make a load fit.
+- It does not establish that a proposed hardware design is certified or electrically safe.
+- It does not currently provide a verified end-to-end device-to-cloud telemetry implementation in the supplied backend/frontend source archives.
 
-## Key features
+## Interpretation of outcomes
 
-### 1. Business registration
-
-The field workflow captures prospective business information so that the operator can review and assess the business.
-
-### 2. Equipment recording
-
-Equipment information helps describe the electrical demand associated with a business. The recorded equipment information contributes to the assessment inputs.
-
-### 3. Metering and business profiles
-
-GridFit includes sensor-device and meter-assignment management, together with reading and business-profile functionality. Metering data can be used to build a profile of observed business demand.
-
-The availability and completeness of a profile depend on the readings collected for the assigned device.
-
-### 4. Fit checks
-
-The rules engine evaluates a business against a selected site's available information and assessment constraints. The result is presented as a feasibility outcome with supporting checks.
-
-See [Rules Engine](rules-engine.md) for the assessment process.
-
-### 5. Site comparison
-
-Operators can compare the assessment of a business across different sites. This helps identify how the same business performs under different site conditions.
-
-### 6. Scenario management and decisions
-
-GridFit supports the creation and review of assessment scenarios. Operators can use scenario results to support decisions about prospective businesses.
-
-Scenario records provide a way to revisit assessment inputs and outcomes.
-
-## How GridFit works
-
-The high-level workflow connects field data collection with operator assessment.
-
-1. **Register a business:** A field operator records a prospective business and its relevant details.
-2. **Record equipment:** The field operator captures the equipment associated with the business.
-3. **Install or assign a meter:** A metering device is assigned to the business so readings can be collected.
-4. **Build a business profile:** Available readings are used to describe observed electricity demand.
-5. **Run a fit check:** The operator assesses the business against a selected mini-grid site.
-6. **Review the outcome:** GridFit presents the assessment outcome and the checks contributing to it.
-7. **Compare and decide:** The operator can compare sites, review scenarios and record a decision.
-
-The exact information available at each step depends on the completeness of the business record, site profile and metering data.
-
-## Related documentation
-
-- [Architecture](architecture.md)
-- [Backend / API](backend-api.md)
-- [Rules Engine](rules-engine.md)
-- [Frontend Web](frontend-web.md)
-- [Field App](field-app.md)
-- [Metering Device](metering-device.md)
+The API outcome enum currently contains `feasible`, `conditionally_feasible` and `not_feasible`. The user interface may express these as YES / MAYBE / NO, but the API enum values are the canonical backend values. A feasible result is only as reliable as its inputs and assumptions. A conditional result needs operator review of the flagged margins or missing information. A not-feasible result identifies one or more constraints that fail under the selected scenario.
