@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620">
+    <defs><filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#15151b" flood-opacity=".14"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#f79438"/></marker></defs>
+    <rect width="100%" height="100%" rx="28" fill="#fbf8f2"/>
+    <text x="56" y="64" font-family="Inter,Arial" font-size="30" font-weight="800" fill="#252334">Security control points</text>
+    <text x="56" y="98" font-family="Inter,Arial" font-size="16" fill="#666477">A defence-in-depth view of the controls expected at each boundary.</text>
+<path d="M260 305.0 C307.5 305.0, 307.5 305.0, 345 305.0" fill="none" stroke="#f79438" stroke-width="4" marker-end="url(#arrow)"/>
+<path d="M560 305.0 C607.5 305.0, 607.5 305.0, 645 305.0" fill="none" stroke="#f79438" stroke-width="4" marker-end="url(#arrow)"/>
+<path d="M860 305.0 C907.5 305.0, 907.5 305.0, 945 305.0" fill="none" stroke="#f79438" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="55" y="230" width="205" height="150" rx="18" fill="#46317c" stroke="#d8d1c6" stroke-width="2" filter="url(#shadow)"/>
+<text x="75" y="266" font-family="Inter,Arial" font-size="19" font-weight="800" fill="#fff">Client</text>
+<text x="75" y="295" font-family="Inter,Arial" font-size="14" fill="#fff">Browser / field user</text>
+<text x="75" y="318" font-family="Inter,Arial" font-size="14" fill="#fff">HTTPS</text>
+<rect x="355" y="230" width="205" height="150" rx="18" fill="#242633" stroke="#d8d1c6" stroke-width="2" filter="url(#shadow)"/>
+<text x="375" y="266" font-family="Inter,Arial" font-size="19" font-weight="800" fill="#fff">Application API</text>
+<text x="375" y="295" font-family="Inter,Arial" font-size="14" fill="#fff">JWT validation</text>
+<text x="375" y="318" font-family="Inter,Arial" font-size="14" fill="#fff">Role authorization</text>
+<rect x="655" y="230" width="205" height="150" rx="18" fill="#f1e5d6" stroke="#d8d1c6" stroke-width="2" filter="url(#shadow)"/>
+<text x="675" y="266" font-family="Inter,Arial" font-size="19" font-weight="800" fill="#252334">Service layer</text>
+<text x="675" y="295" font-family="Inter,Arial" font-size="14" fill="#252334">Validation</text>
+<text x="675" y="318" font-family="Inter,Arial" font-size="14" fill="#252334">Organisation scope</text>
+<rect x="955" y="230" width="190" height="150" rx="18" fill="#dce8f5" stroke="#d8d1c6" stroke-width="2" filter="url(#shadow)"/>
+<text x="975" y="266" font-family="Inter,Arial" font-size="19" font-weight="800" fill="#252334">Database</text>
+<text x="975" y="295" font-family="Inter,Arial" font-size="14" fill="#252334">Constraints</text>
+<text x="975" y="318" font-family="Inter,Arial" font-size="14" fill="#252334">Persistent records</text>
+</svg>

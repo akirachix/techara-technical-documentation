@@ -8,10 +8,11 @@ copyright: TechAra · GridFit
 
 theme:
   name: material
+  custom_dir: overrides
   logo: assets/images/gridfit-mark-white.svg
   favicon: assets/images/favicon.png
   font:
-    text: Afacad
+    text: Nunito Sans
     code: JetBrains Mono
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -41,7 +42,10 @@ theme:
 
 extra_css:
   - assets/stylesheets/extra.css
+  - assets/stylesheets/home.css
 
+extra_javascript:
+  - assets/javascripts/home.js
 markdown_extensions:
   - admonition
   - attr_list

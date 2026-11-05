@@ -54,3 +54,13 @@ The repository contains a web app manifest and app icons. The README explicitly 
 | A page does not work offline | No service worker is present in the supplied project; use a network connection. |
 | Meter is listed but no readings appear | Device registration/assignment records do not prove telemetry ingestion. Confirm the ingestion service exists and is deployed. |
 | A request is rejected | Check required fields, UUIDs, user role, organisation scope and API response details. |
+
+## Implementation status
+
+The field app is a prototype / mock experience rather than a verified persistent backend-integrated workflow. This is consistent with the actual frontend source:
+
+- `techara-frontend/README.md` explicitly states that the frontend uses mock data and has not yet been connected to the backend.
+- `techara-frontend/app/providers.js` stores current state in React `useState(...)` without a persistent backend or database layer.
+- The login and draft flows are client-side and in-memory rather than authenticated API-backed operations.
+
+The field-app screens should therefore be treated as demonstration flows until a real backend integration, production authentication flow and persisted record pipeline are validated.

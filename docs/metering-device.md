@@ -196,3 +196,18 @@ Do not mark an installation as transmitting merely because an assignment record 
 - [ ] Clock synchronisation and energy-counter reset policy defined.
 - [ ] Device health, fault and retirement behaviour defined.
 - [ ] Field installation and safe isolation procedure approved.
+
+## Implementation status
+
+The metering capability is best understood as a mixed status: some software logic exists, but the physical device and telemetry path remain unverified.
+
+| Component | Status | Evidence basis | Notes |
+|---|---|---|---|
+| Meter assignment logic | Verified | `techara-backend/services/meter_assignment_service.py`, `routers/meter_assignments.py` | Active-device and open-assignment checks are implemented in source. |
+| Device and reading data model | Verified | `techara-backend/models/reading.py`, `models/meter_assignment.py` | The schema and database constraints exist. |
+| Device firmware | Not Evidenced | supplied repositories | No firmware source or hardware project was present in the inspected repos. |
+| Telemetry ingestion endpoint | Not Evidenced | backend route inspection | No `POST /readings` or equivalent authenticated ingestion route is in the supplied source. |
+| Physical hardware deployment | Not Evidenced | supplied hardware design notes | No verified hardware build, calibration, or installation evidence is present. |
+| End-to-end meter telemetry flow | Not Evidenced | backend + frontend source inspection | The backend models for readings exist, but the full device-to-API path is not implemented or proven. |
+
+This page therefore distinguishes the implemented contract and assignment logic from the proposed or planned hardware/firmware path. A meter assignment record is not proof that a physical device is transmitting valid readings.

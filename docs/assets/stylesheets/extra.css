@@ -108,3 +108,581 @@
   margin-right: 0.4em;
   border: 1px solid rgba(0, 0, 0, 0.15);
 }
+
+/* =========================================================
+   GRIDFIT DOCUMENTATION THEME — ALL CONTENT PAGES
+   ========================================================= */
+
+/* Light mode: consistent lavender navigation on every page */
+body[data-md-color-scheme="default"] .md-header {
+  background: rgba(240, 234, 251, .98);
+  border-bottom: 1px solid rgba(70, 49, 124, .16);
+  color: #30204F;
+  box-shadow: 0 2px 12px rgba(55, 35, 91, .05);
+}
+
+body[data-md-color-scheme="default"] .md-header .md-header__button,
+body[data-md-color-scheme="default"] .md-header .md-header__topic {
+  color: #30204F;
+}
+
+body[data-md-color-scheme="default"] .md-header .md-search__form {
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid rgba(70, 49, 124, .18);
+}
+
+body[data-md-color-scheme="default"] .md-header .md-search__input,
+body[data-md-color-scheme="default"] .md-header .md-search__icon {
+  color: #46317C;
+}
+
+body[data-md-color-scheme="default"] .md-tabs {
+  background: #EDE6F8;
+  color: #46317C;
+}
+
+/* Documentation links and active navigation */
+body[data-md-color-scheme="default"] .md-nav__link--active,
+body[data-md-color-scheme="default"] .md-tabs__link--active {
+  color: #E47720;
+  font-weight: 700;
+}
+
+/* GridFit information boxes */
+.md-typeset .admonition,
+.md-typeset details {
+  border: 1px solid rgba(70, 49, 124, .22);
+  border-left: 4px solid #9B8FC0;
+  border-radius: 10px;
+  box-shadow: 0 5px 18px rgba(55, 35, 91, .045);
+  overflow: hidden;
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  background: #F0EAFB;
+  color: #46317C;
+  font-weight: 700;
+}
+
+/* Info and note: soft lavender */
+.md-typeset .admonition.info,
+.md-typeset .admonition.note,
+.md-typeset details.note {
+  border-left-color: #9B8FC0;
+}
+
+.md-typeset .admonition.info > .admonition-title,
+.md-typeset .admonition.note > .admonition-title,
+.md-typeset details.note > summary {
+  background: #EDE6F8;
+  color: #46317C;
+}
+
+/* Tip: purple emphasis */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-left-color: #46317C;
+}
+
+.md-typeset .admonition.tip > .admonition-title,
+.md-typeset details.tip > summary {
+  background: #E5DDF3;
+  color: #38235F;
+}
+
+/* Warning and caution: soft orange */
+.md-typeset .admonition.warning,
+.md-typeset .admonition.caution,
+.md-typeset details.warning {
+  border-left-color: #F79438;
+}
+
+.md-typeset .admonition.warning > .admonition-title,
+.md-typeset .admonition.caution > .admonition-title,
+.md-typeset details.warning > summary {
+  background: #FFF0DF;
+  color: #81420F;
+}
+
+/* Dark mode retains the original dark GridFit identity */
+[data-md-color-scheme="slate"] .md-typeset .admonition,
+[data-md-color-scheme="slate"] .md-typeset details {
+  background: #1E1630;
+  border-color: rgba(155, 143, 192, .25);
+  border-left-color: #9B8FC0;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset summary {
+  background: #2A1B4A;
+  color: #EDE7F8;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning,
+[data-md-color-scheme="slate"] .md-typeset .admonition.caution {
+  border-left-color: #F79438;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset .admonition.caution > .admonition-title {
+  background: rgba(247, 148, 56, .13);
+  color: #FFBD7D;
+}
+
+
+
+/* =========================================================
+   GRIDFIT DOCUMENTATION CALLOUTS
+   ========================================================= */
+
+.md-typeset .admonition,
+.md-typeset details {
+  border: 1px solid rgba(70, 49, 124, .25) !important;
+  border-left: 4px solid #9B8FC0 !important;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  background: #EDE6F8 !important;
+  color: #46317C !important;
+}
+
+.md-typeset .admonition.info,
+.md-typeset .admonition.note,
+.md-typeset details.note {
+  --md-admonition-icon-color: #46317C;
+  border-left-color: #9B8FC0 !important;
+}
+
+.md-typeset .admonition.warning,
+.md-typeset .admonition.caution,
+.md-typeset details.warning {
+  --md-admonition-icon-color: #F79438;
+  border-left-color: #F79438 !important;
+}
+
+.md-typeset .admonition.warning > .admonition-title,
+.md-typeset .admonition.caution > .admonition-title,
+.md-typeset details.warning > summary {
+  background: #FFF0DF !important;
+  color: #81420F !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition,
+[data-md-color-scheme="slate"] .md-typeset details {
+  background: #1E1630;
+  border-color: rgba(155, 143, 192, .25) !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset summary {
+  background: #2A1B4A !important;
+  color: #EDE7F8 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset .admonition.caution > .admonition-title {
+  background: rgba(247, 148, 56, .13) !important;
+  color: #FFBD7D !important;
+}
+
+/* Single documentation library: footer retains brand and credits */
+.gf-footer__grid {
+  grid-template-columns: 1fr !important;
+}
+
+
+/* ===== Site-wide typography consistency ===== */
+.md-typeset,
+.md-nav,
+.md-header,
+.md-tabs,
+.md-footer {
+  font-family: "Nunito Sans", var(--md-text-font-family), sans-serif;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  font-family: "Nunito Sans", var(--md-text-font-family), sans-serif;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+}
+
+/* ===== Light-mode Material documentation footer ===== */
+[data-md-color-scheme="default"] .md-footer {
+  color: #46317C;
+  background: #EDE6F8;
+  border-top: 1px solid rgba(70, 49, 124, .18);
+}
+
+[data-md-color-scheme="default"] .md-footer-meta {
+  color: #51436D;
+  background: #EDE6F8;
+}
+
+[data-md-color-scheme="default"] .md-footer-nav {
+  background: #F6F2FC;
+}
+
+[data-md-color-scheme="default"] .md-footer a {
+  color: #46317C;
+}
+
+[data-md-color-scheme="default"] .md-footer a:hover {
+  color: #E47720;
+}
+
+[data-md-color-scheme="default"] .md-footer-meta__inner {
+  padding-top: 1.1rem;
+  padding-bottom: 1.1rem;
+}
+
+/* ===== Editorial documentation styling ===== */
+.md-typeset h1 {
+  font-size: clamp(2.2rem, 4vw, 3.1rem);
+  line-height: 1.12;
+}
+
+.md-typeset h2 {
+  margin-top: 2.8rem;
+  padding-bottom: .55rem;
+  border-bottom: 1px solid rgba(155, 143, 192, .25);
+  font-size: clamp(1.55rem, 2.5vw, 2rem);
+}
+
+.md-typeset h3 {
+  margin-top: 1.8rem;
+  font-size: 1.22rem;
+}
+
+.md-typeset p,
+.md-typeset li {
+  line-height: 1.8;
+}
+
+.md-typeset hr {
+  border-bottom-color: rgba(155, 143, 192, .3);
+}
+
+.md-typeset table:not([class]) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+
+/* ===== Site-wide typography consistency ===== */
+.md-typeset,
+.md-nav,
+.md-header,
+.md-tabs,
+.md-footer {
+  font-family: "Nunito Sans", var(--md-text-font-family), sans-serif;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  font-family: "Nunito Sans", var(--md-text-font-family), sans-serif;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+}
+
+/* ===== Light-mode Material documentation footer ===== */
+[data-md-color-scheme="default"] .md-footer {
+  color: #46317C;
+  background: #EDE6F8;
+  border-top: 1px solid rgba(70, 49, 124, .18);
+}
+
+[data-md-color-scheme="default"] .md-footer-meta {
+  color: #51436D;
+  background: #EDE6F8;
+}
+
+[data-md-color-scheme="default"] .md-footer-nav {
+  background: #F6F2FC;
+}
+
+[data-md-color-scheme="default"] .md-footer a {
+  color: #46317C;
+}
+
+[data-md-color-scheme="default"] .md-footer a:hover {
+  color: #E47720;
+}
+
+[data-md-color-scheme="default"] .md-footer-meta__inner {
+  padding-top: 1.1rem;
+  padding-bottom: 1.1rem;
+}
+
+/* ===== Editorial documentation styling ===== */
+.md-typeset h1 {
+  font-size: clamp(2.2rem, 4vw, 3.1rem);
+  line-height: 1.12;
+}
+
+.md-typeset h2 {
+  margin-top: 2.8rem;
+  padding-bottom: .55rem;
+  border-bottom: 1px solid rgba(155, 143, 192, .25);
+  font-size: clamp(1.55rem, 2.5vw, 2rem);
+}
+
+.md-typeset h3 {
+  margin-top: 1.8rem;
+  font-size: 1.22rem;
+}
+
+.md-typeset p,
+.md-typeset li {
+  line-height: 1.8;
+}
+
+.md-typeset hr {
+  border-bottom-color: rgba(155, 143, 192, .3);
+}
+
+.md-typeset table:not([class]) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+
+/* Prevent white gaps around the documentation content in dark mode */
+[data-md-color-scheme="slate"] .md-main,
+[data-md-color-scheme="slate"] .md-content,
+[data-md-color-scheme="slate"] .md-content__inner {
+  background-color: #130D20 !important;
+}
+
+
+/* ===== GridFit documentation heading palette ===== */
+
+/* Light theme */
+[data-md-color-scheme="default"] .md-typeset h1,
+[data-md-color-scheme="default"] .md-typeset h2 {
+  color: #46317C !important;
+}
+
+[data-md-color-scheme="default"] .md-typeset h3,
+[data-md-color-scheme="default"] .md-typeset h4 {
+  color: #E47720 !important;
+}
+
+/* Dark theme */
+[data-md-color-scheme="slate"] .md-typeset h1,
+[data-md-color-scheme="slate"] .md-typeset h2 {
+  color: #BCA9E8 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h3,
+[data-md-color-scheme="slate"] .md-typeset h4 {
+  color: #F79438 !important;
+}
+
+
+/* Tighten spacing between page title and opening paragraph */
+.md-content .md-typeset > h1:first-child {
+  margin-bottom: 1.2rem !important;
+}
+
+.md-content .md-typeset > h1:first-child + p {
+  margin-top: 0 !important;
+}
+
+
+/* ===== GridFit documentation lavender light-mode background ===== */
+
+[data-md-color-scheme="default"] .md-main {
+  background-color: #F1EBFA !important;
+}
+
+[data-md-color-scheme="default"] .md-main__inner,
+[data-md-color-scheme="default"] .md-content,
+[data-md-color-scheme="default"] .md-content__inner,
+[data-md-color-scheme="default"] .md-sidebar {
+  background-color: transparent !important;
+}
+
+
+
+/* ===== Architecture: Components and responsibilities ===== */
+
+.gf-component-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.gf-component-card {
+  min-width: 0;
+  padding: 1.35rem 1.45rem;
+  border: 1px solid rgba(155, 143, 192, .28);
+  border-radius: 17px;
+  background: #FAF8FF;
+  box-shadow: 0 5px 18px rgba(54, 37, 91, .045);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.gf-component-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(54, 37, 91, .09);
+}
+
+.gf-component-category {
+  display: inline-block;
+  margin-bottom: .75rem;
+  color: #E47720;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .11em;
+  line-height: 1.4;
+}
+
+.gf-component-card h3 {
+  margin: 0 0 .55rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+  color: #46317C !important;
+  font-size: 1.08rem !important;
+  font-weight: 750 !important;
+  line-height: 1.4 !important;
+}
+
+.gf-component-card p {
+  margin: 0 !important;
+  color: #514A5E;
+  font-size: .88rem;
+  line-height: 1.7;
+}
+
+.gf-component-card--qualified {
+  border-style: dashed;
+  border-color: rgba(228, 119, 32, .5);
+}
+
+[data-md-color-scheme="slate"] .gf-component-card {
+  background: #211833;
+  border-color: rgba(190, 169, 225, .2);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .15);
+}
+
+[data-md-color-scheme="slate"] .gf-component-card h3 {
+  color: #E4D8FF !important;
+}
+
+[data-md-color-scheme="slate"] .gf-component-card p {
+  color: #D4CADD;
+}
+
+@media (max-width: 700px) {
+  .gf-component-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* GridFit architecture: readable, transparent Mermaid flowcharts */
+.md-typeset .mermaid {
+  width: 100%;
+  max-width: 100%;
+  margin: 2rem auto 2.5rem;
+  padding: 1.5rem;
+  overflow-x: auto;
+  text-align: center;
+  background: transparent !important;
+  border: 1px solid rgba(155, 143, 192, .22);
+  border-radius: 18px;
+  box-shadow: 0 6px 22px rgba(54, 37, 91, .045);
+}
+
+.md-typeset .mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  background: transparent !important;
+}
+
+.md-typeset .mermaid .nodeLabel,
+.md-typeset .mermaid .edgeLabel {
+  font-family: "Nunito Sans", var(--md-text-font-family), sans-serif !important;
+  font-size: 15px !important;
+}
+
+.md-typeset .mermaid .cluster rect {
+  fill: rgba(241, 235, 250, .48) !important;
+  stroke: rgba(155, 143, 192, .48) !important;
+  stroke-width: 1.2px !important;
+  rx: 14px;
+  ry: 14px;
+}
+
+.md-typeset .mermaid .cluster-label,
+.md-typeset .mermaid .cluster-label span {
+  color: #46317C !important;
+  fill: #46317C !important;
+  font-weight: 800 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid {
+  border-color: rgba(190, 169, 225, .2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid .cluster rect {
+  fill: rgba(70, 49, 124, .18) !important;
+  stroke: rgba(190, 169, 225, .32) !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid .cluster-label,
+[data-md-color-scheme="slate"] .md-typeset .mermaid .cluster-label span {
+  color: #D8C9F5 !important;
+  fill: #D8C9F5 !important;
+}
+
+@media (max-width: 700px) {
+  .md-typeset .mermaid {
+    padding: .6rem;
+    margin: 1.2rem auto;
+  }
+}
+
+
+/* GridFit sidebar section-title typography */
+.md-sidebar--primary .md-nav__title,
+.md-sidebar--secondary .md-nav__title {
+  font-family: "Nunito Sans", sans-serif !important;
+  font-size: 0.76rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.025em !important;
+  color: #46317C !important;
+  background: #F1EBFA !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* Keep the sidebar title backgrounds consistent in light mode. */
+[data-md-color-scheme="default"] .md-sidebar--primary .md-nav__title,
+[data-md-color-scheme="default"] .md-sidebar--secondary .md-nav__title {
+  color: #46317C !important;
+  background: #F1EBFA !important;
+}
+
+/* Dark mode */
+[data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title,
+[data-md-color-scheme="slate"] .md-sidebar--secondary .md-nav__title {
+  color: #D9C9FF !important;
+  background: #211833 !important;
+}
