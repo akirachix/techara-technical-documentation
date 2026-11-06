@@ -1,34 +1,17 @@
 ---
-hide:
-  - navigation
-  - toc
+title: GridFit Technical Documentation
+template: home.html
+description: Technical documentation for GridFit, a rules-based fit check that matches SME electricity demand to spare mini-grid capacity in Zambia.
 ---
 
-# Welcome to GridFit
+## Platform at a glance
 
-<div class="gf-hero" markdown>
-
-![GridFit logo](assets/images/gridfit-mark.svg)
-
-GridFit helps Zambian mini-grid operators check whether a business's real, measured load fits the spare capacity on their grid, at the hours that business actually runs.
-
-[Get started](overview.md){ .md-button .md-button--primary }
-[How it's built](architecture.md){ .md-button }
-
-</div>
-
----
-
-## Why GridFit?
-
-!!! warning "TODO"
-    Three or four short cards on what makes GridFit different (measured load instead of guesses, explainable YES / MAYBE / NO, works with operators' existing systems, compare sites).
-
-## Platform highlights
-
-!!! warning "TODO"
-    Dashboard and field app screenshots go here once we have them. Drop them in `docs/assets/images/screenshots/`.
-
----
-
-Built by **TechAra**: Emma Mwelwa, Gift Mwansa, Gabrielle Mordaunt, Nikki Wanjiku and Sharon Njambi.
+| Component | Current implementation |
+|---|---|
+| Operator and field interface | Next.js application using React |
+| API | FastAPI |
+| Persistence | SQLAlchemy models with SQLite/PostgreSQL dialect support |
+| Assessment | Python rules and simulation engine |
+| Metering data model | Reading and meter-assignment tables |
+| Informational website | Separate Vite/React application |
+| Documentation | MkDocs Material, published through GitHub Pages |
