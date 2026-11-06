@@ -143,7 +143,14 @@ These descriptions identify the documented screen scope; they are not a claim th
 
 Use the combined design board below as the visual reference. The left side documents the TechAra brand exploration and identity; the right side documents the GridFit product logo exploration and final mark. Treat the GridFit product identity as the direct reference for GridFit documentation and interface work.
 
-![TechAra brand designs and GridFit product identity](assets/images/techara-gridfit-brand-reference.png)
+<div class="gridfit-interface-reference">
+  <img class="gridfit-interface-light"
+       src="../assets/images/gridfit-interface-reference.png"
+       alt="GridFit interface reference for light mode">
+  <img class="gridfit-interface-dark"
+       src="../assets/images/gridfit-interface-reference-dark.png"
+       alt="GridFit interface reference for dark mode">
+</div>
 
 The field workflow should retain a consistent visual language across all four screens:
 

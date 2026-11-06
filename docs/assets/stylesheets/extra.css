@@ -686,3 +686,30 @@ body[data-md-color-scheme="default"] .md-tabs__link--active {
   color: #D9C9FF !important;
   background: #211833 !important;
 }
+
+/* GridFit Interface Reference — theme-aware images */
+.gridfit-interface-reference {
+  width: 100%;
+  margin: 1.5rem auto;
+  text-align: center;
+}
+
+.gridfit-interface-reference img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 12px;
+}
+
+.gridfit-interface-dark {
+  display: none !important;
+}
+
+body[data-md-color-scheme="slate"] .gridfit-interface-light {
+  display: none !important;
+}
+
+body[data-md-color-scheme="slate"] .gridfit-interface-dark {
+  display: block !important;
+}
